@@ -132,7 +132,26 @@ void PeridigmNS::BoundaryCondition::evaluateParser(const int & localNodeID, doub
     Teuchos::RCP<Epetra_Vector> previousDisplacement = peridigm->getU();
     previousValue = (*previousDisplacement)[localNodeID*3 + coord];
   }
-
+  else if(bcType==PRESCRIBED_PORE_PRESSURE && currentValue - previousValue == 0.0)
+  {
+    Teuchos::RCP<Epetra_Vector> previousPorePressure = peridigm->getPorePressureU();
+    previousValue = (*previousPorePressure)[localNodeID ];
+  }
+  else if(bcType==PRESCRIBED_FRAC_PRESSURE && currentValue - previousValue == 0.0)
+  {
+    Teuchos::RCP<Epetra_Vector> previousFracPressure = peridigm->getFracPressureU();
+    previousValue = (*previousFracPressure)[localNodeID ];
+  }
+  else if(bcType==PRESCRIBED_PHASE_1_SAT_PORES && currentValue - previousValue == 0.0)
+  {
+    Teuchos::RCP<Epetra_Vector> previousPhaseOneSatPores = peridigm->getPhaseOneSaturationPoresU();
+    previousValue = (*previousPhaseOneSatPores)[localNodeID ];
+  }
+  else if(bcType==PRESCRIBED_PHASE_1_SAT_FRAC && currentValue - previousValue == 0.0)
+  {
+    Teuchos::RCP<Epetra_Vector> previousPhaseOneSatFrac = peridigm->getPhaseOneSaturationFracU();
+    previousValue = (*previousPhaseOneSatFrac)[localNodeID ];
+  }
   // TODO: we should revisit how prescribed boundary conditions interact with initial conditions
   // in the case that the prescribed boundary condition at time zero doesn't match the inital condition
   // who wins?
@@ -145,6 +164,9 @@ PeridigmNS::DirichletBC::DirichletBC(const string & name_,const Teuchos::Paramet
 void PeridigmNS::DirichletBC::apply(Teuchos::RCP< std::map< std::string, std::vector<int> > > nodeSets, const double & timeCurrent, const double & timePrevious){
   // get the tensor order of the bc field:
   const int fieldDimension = to_dimension_size(tensorOrder);
+
+  double norm(0.0);
+  toVector->Norm2(&norm);
 
   string rtcFunctionString = function;
   if(rtcFunctionString.find("value") == string::npos)
@@ -222,6 +244,9 @@ void PeridigmNS::DirichletIncrementBC::apply(Teuchos::RCP< std::map< std::string
   // get the tensor order of the bc field:
   const int fieldDimension = to_dimension_size(tensorOrder);
 
+  double norm(0.0);
+  toVector->Norm2(&norm);
+
   string rtcFunctionString = function;
   if(rtcFunctionString.find("value") == string::npos)
     rtcFunctionString = "value = " + rtcFunctionString;
@@ -282,5 +307,3 @@ void PeridigmNS::DirichletIncrementBC::apply(Teuchos::RCP< std::map< std::string
     }
   }
 }
-
-

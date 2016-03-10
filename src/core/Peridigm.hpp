@@ -325,15 +325,34 @@ namespace PeridigmNS {
     Teuchos::RCP<Epetra_Vector> getY() { return y; }
     Teuchos::RCP<Epetra_Vector> getV() { return v; }
     Teuchos::RCP<Epetra_Vector> getA() { return a; }
-    Teuchos::RCP<Epetra_Vector> getFluidPressureU() { return fluidPressureU; }
-    Teuchos::RCP<Epetra_Vector> getFluidPressureY() { return fluidPressureY; }
-    Teuchos::RCP<Epetra_Vector> getFluidPressureV() { return fluidPressureV; }
+    Teuchos::RCP<Epetra_Vector> getPhaseOneSaturationPoresY() { return phaseOneSaturationPoresY; }
+    Teuchos::RCP<Epetra_Vector> getPhaseOneSaturationFracY() { return phaseOneSaturationFracY; }
+    Teuchos::RCP<Epetra_Vector> getPhaseOneSaturationPoresU() { return phaseOneSaturationPoresU; }
+    Teuchos::RCP<Epetra_Vector> getPhaseOneSaturationFracU() { return phaseOneSaturationFracU; }
+    Teuchos::RCP<Epetra_Vector> getPhaseOneSaturationPoresDeltaU() { return phaseOneSaturationPoresIncrement; }
+    Teuchos::RCP<Epetra_Vector> getPhaseOneSaturationFracDeltaU() { return phaseOneSaturationFracIncrement; }
+    Teuchos::RCP<Epetra_Vector> getPhaseOneSaturationPoresV() { return phaseOneSaturationPoresV; }
+    Teuchos::RCP<Epetra_Vector> getPhaseOneSaturationFracV() { return phaseOneSaturationFracV; }
+    Teuchos::RCP<Epetra_Vector> getPorePressureU() { return porePressureU; }
+    Teuchos::RCP<Epetra_Vector> getPorePressureY() { return porePressureY; }
+    Teuchos::RCP<Epetra_Vector> getPorePressureV() { return porePressureV; }
+    Teuchos::RCP<Epetra_Vector> getPorePressureDeltaU() { return porePressureDeltaU;}
+    Teuchos::RCP<Epetra_Vector> getFracPressureU() { return fracturePressureU; }
+    Teuchos::RCP<Epetra_Vector> getFracPressureY() { return fracturePressureY; }
+    Teuchos::RCP<Epetra_Vector> getFracPressureV() { return fracturePressureV; }
+    Teuchos::RCP<Epetra_Vector> getFracPressureDeltaU() { return fracturePressureDeltaU;}
+    Teuchos::RCP<Epetra_Vector> getPhaseOnePoreFlow() { return phaseOnePoreFlow; }
+    Teuchos::RCP<Epetra_Vector> getExternalPhaseOnePoreFlow() {return externalPhaseOnePoreFlow; }
+    Teuchos::RCP<Epetra_Vector> getPhaseOneFracFlow() { return phaseOneFracFlow; }
+    Teuchos::RCP<Epetra_Vector> getExternalPhaseOneFracFlow() {return externalPhaseOneFracFlow; }
+    Teuchos::RCP<Epetra_Vector> getPhaseTwoPoreFlow() { return phaseTwoPoreFlow; }
+    Teuchos::RCP<Epetra_Vector> getExternalPhaseTwoPoreFlow() {return externalPhaseTwoPoreFlow; }
+    Teuchos::RCP<Epetra_Vector> getPhaseTwoFracFlow() { return phaseTwoFracFlow; }
+    Teuchos::RCP<Epetra_Vector> getExternalPhaseTwoFracFlow() {return externalPhaseTwoFracFlow; }
     Teuchos::RCP<Epetra_Vector> getForce() { return force; }
-    Teuchos::RCP<Epetra_Vector> getFluidFlow() { return fluidFlow; }
     Teuchos::RCP<Epetra_Vector> getExternalForce() { return externalForce; }
     Teuchos::RCP<Epetra_Vector> getContactForce() { return contactForce; }
     Teuchos::RCP<Epetra_Vector> getDeltaU() { return deltaU; }
-    Teuchos::RCP<Epetra_Vector> getFluidPressureDeltaU() { return fluidPressureDeltaU;}
     Teuchos::RCP<Epetra_Vector> getVolume() { return volume; }
     Teuchos::RCP<Epetra_Vector> getDeltaTemperature() { return deltaTemperature; }
     //@}
@@ -451,25 +470,14 @@ namespace PeridigmNS {
     //! Global vector for displacement
     Teuchos::RCP<Epetra_Vector> u;
 
-		//! Global vector for solid mechanics dof and additional
-    Teuchos::RCP<Epetra_Vector> combinedU;
-
     //! Global vector for current position
     Teuchos::RCP<Epetra_Vector> y;
-
-		//! Global vector for solid mechanics current position and analogous quantities
-    Teuchos::RCP<Epetra_Vector> combinedY;
 
     //! Global vector for velocity
     Teuchos::RCP<Epetra_Vector> v;
 
-		//! Gloval vector for solid mechanics velocity and analogous quantities
-    Teuchos::RCP<Epetra_Vector> combinedV;
-
     //! Global vector for acceleration
     Teuchos::RCP<Epetra_Vector> a;
-
-    Teuchos::RCP<Epetra_Vector> combinedA;
 
     //! Global vector for temperature change
     Teuchos::RCP<Epetra_Vector> deltaTemperature;
@@ -477,6 +485,7 @@ namespace PeridigmNS {
     //! Global vector for force
     Teuchos::RCP<Epetra_Vector> force;
 
+    //! Global vector for forces and flows
     Teuchos::RCP<Epetra_Vector> combinedForce;
 
     //! Global vector for contact force (used only in simulations with contact)
@@ -485,57 +494,81 @@ namespace PeridigmNS {
     //! Global vector for external forces
     Teuchos::RCP<Epetra_Vector> externalForce;
 
-    Teuchos::RCP<Epetra_Vector> combinedExternalForce;
-
     //! Global vector for delta u (used only in implicit time integration)
     Teuchos::RCP<Epetra_Vector> deltaU;
 
-    Teuchos::RCP<Epetra_Vector> combinedDeltaU;
-
     //! Global scratch space vector
     Teuchos::RCP<Epetra_Vector> scratch;
-
     Teuchos::RCP<Epetra_Vector> scratchOneD;
-
-    Teuchos::RCP<Epetra_Vector> combinedScratch;
 
     //! Vector containing velocities at dof with kinematic bc; used only by NOX solver.
     Teuchos::RCP<Epetra_Vector> noxVelocityAtDOFWithKinematicBC;
+    Teuchos::RCP<Epetra_Vector> noxPorePressureVAtDOFWithKinematicBC;
+    Teuchos::RCP<Epetra_Vector> noxFracPressureVAtDOFWithKinematicBC;
+    Teuchos::RCP<Epetra_Vector> noxPhaseOneSaturationPoresVAtDOFWithKinematicBC;
+    Teuchos::RCP<Epetra_Vector> noxPhaseOneSaturationFracVAtDOFWithKinematicBC;
 
-    Teuchos::RCP<Epetra_Vector> noxPressureVAtDOFWithKinematicBC;
-
-    //! Global vector for block ID 
+    //! Global vector for block ID
     Teuchos::RCP<Epetra_Vector> blockIDs;
 
     //! Global vector containing the horizon for each point
     Teuchos::RCP<Epetra_Vector> horizon;
 
-    //! Global vector for cell volume 
+    //! Global vector for cell volume
     Teuchos::RCP<Epetra_Vector> volume;
 
     //! Global vector for cell density
     Teuchos::RCP<Epetra_Vector> density;
 
-		//! Global vector for cell fluid density
-    Teuchos::RCP<Epetra_Vector> fluidDensity;
+    Teuchos::RCP<Epetra_Vector> porePressureIncrement;
+    //! Global vector for pore pressure displacement analogue
+    Teuchos::RCP<Epetra_Vector> porePressureU;
+    //! Global vector for pore pressure current
+    Teuchos::RCP<Epetra_Vector> porePressureY;
+    //! Global vector for pore pressure current velocity analogue
+    Teuchos::RCP<Epetra_Vector> porePressureV;
+    //! Global vector for delta pore pressure
+    Teuchos::RCP<Epetra_Vector> porePressureDeltaU;
 
-		//! Glocal vector for cell fluid compressibility
-    Teuchos::RCP<Epetra_Vector> fluidCompressibility;
+    Teuchos::RCP<Epetra_Vector> fracturePressureIncrement; // needed to update spec two quantities
+    //! Global vector for fracture pressure displacement analogue
+    Teuchos::RCP<Epetra_Vector> fracturePressureU;
+    //! Global vector for fracture pressure current
+    Teuchos::RCP<Epetra_Vector> fracturePressureY;
+    //! Global vector for fracture pressure current velocity analogue
+    Teuchos::RCP<Epetra_Vector> fracturePressureV;
+    //! Global vector for delta fracture pressure
+    Teuchos::RCP<Epetra_Vector> fracturePressureDeltaU;
 
-    //! Global vector for fluid pressure displacement analogue
-    Teuchos::RCP<Epetra_Vector> fluidPressureU;
+    //! Global vector for species one fraction in pores
+    Teuchos::RCP<Epetra_Vector> phaseOneSaturationPoresIncrement;
+    Teuchos::RCP<Epetra_Vector> phaseOneSaturationPoresV;
+    Teuchos::RCP<Epetra_Vector> phaseOneSaturationPoresY;
+    Teuchos::RCP<Epetra_Vector> phaseOneSaturationPoresU;
 
-    //! Global vector for fluid pressure current
-    Teuchos::RCP<Epetra_Vector> fluidPressureY;
+    //! Global vector for species one fraction in fracture
+    Teuchos::RCP<Epetra_Vector> phaseOneSaturationFracIncrement;
+    Teuchos::RCP<Epetra_Vector> phaseOneSaturationFracV;
+    Teuchos::RCP<Epetra_Vector> phaseOneSaturationFracY;
+    Teuchos::RCP<Epetra_Vector> phaseOneSaturationFracU;
 
-    //! Global vector for fluid pressure current velocity analogue
-    Teuchos::RCP<Epetra_Vector> fluidPressureV;
+    //! Global vector for phaseOnePore flow
+    Teuchos::RCP<Epetra_Vector> phaseOnePoreFlow;
+    Teuchos::RCP<Epetra_Vector> externalPhaseOnePoreFlow;
 
-    //! Global vector for delta fluid pressure
-    Teuchos::RCP<Epetra_Vector> fluidPressureDeltaU;
+    //! Global vector for phaseOneFrac flow
+    Teuchos::RCP<Epetra_Vector> phaseOneFracFlow;
+    //! Global vector for external phaseOneFrac flow inputs
+    Teuchos::RCP<Epetra_Vector> externalPhaseOneFracFlow;
 
-    //! Global vector for fluid flow 
-    Teuchos::RCP<Epetra_Vector> fluidFlow;
+    //! Global vector for phaseTwoPore flow
+    Teuchos::RCP<Epetra_Vector> phaseTwoPoreFlow;
+    Teuchos::RCP<Epetra_Vector> externalPhaseTwoPoreFlow;
+
+    //! Global vector for phaseTwoFrac flow
+    Teuchos::RCP<Epetra_Vector> phaseTwoFracFlow;
+    //! Global vector for external phaseTwoFrac flow inputs
+    Teuchos::RCP<Epetra_Vector> externalPhaseTwoFracFlow;
 
     //! Type of tangent to evaluate
     PeridigmNS::Material::JacobianType jacobianType;
@@ -593,10 +626,32 @@ namespace PeridigmNS {
     int partialVolumeFieldId;
 
     // multiphyics information
-    int fluidPressureYFieldId;
-    int fluidPressureUFieldId;
-    int fluidPressureVFieldId;
-    int fluidFlowDensityFieldId;
+    int porePressureYFieldId;
+    int porePressureUFieldId;
+    int porePressureVFieldId;
+    int fracturePressureYFieldId;
+    int fracturePressureUFieldId;
+    int fracturePressureVFieldId;
+
+    int phaseOneSaturationPoresYFieldId;
+    int phaseOneSaturationPoresUFieldId;
+    int phaseOneSaturationPoresVFieldId;
+    int phaseOneSaturationPoresIncrementFieldId;
+    int phaseOneSaturationFracYFieldId;
+    int phaseOneSaturationFracUFieldId;
+    int phaseOneSaturationFracVFieldId;
+    int phaseOneSaturationFracIncrementFieldId;
+
+    int phaseOnePoreFlowDensityFieldId;
+    int phaseOnePoreExternalFlowDensityFieldId;
+    int phaseOneFracFlowDensityFieldId;
+    int phaseOneFracExternalFlowDensityFieldId;
+
+    int phaseTwoPoreFlowDensityFieldId;
+    int phaseTwoPoreExternalFlowDensityFieldId;
+    int phaseTwoFracFlowDensityFieldId;
+    int phaseTwoFracExternalFlowDensityFieldId;
+
     int numMultiphysDoFs;
     string textMultiphysDoFs;
 

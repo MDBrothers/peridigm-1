@@ -169,7 +169,7 @@ PeridigmNS::ExodusDiscretization::ExodusDiscretization(const Teuchos::RCP<const 
     constructInterfaceData();
 
   // Create the three-dimensional overlap map based on the one-dimensional overlap map
-  threeDimensionalOverlapMap = Teuchos::rcp(new Epetra_BlockMap(-1, 
+  threeDimensionalOverlapMap = Teuchos::rcp(new Epetra_BlockMap(-1,
                                                                 oneDimensionalOverlapMap->NumMyElements(),
                                                                 oneDimensionalOverlapMap->MyGlobalElements(),
                                                                 3,
@@ -181,7 +181,7 @@ PeridigmNS::ExodusDiscretization::ExodusDiscretization(const Teuchos::RCP<const 
   // Due to Epetra_BlockMap restrictions, there can not be any entries with length zero.
   // This means that points with no neighbors can not appear in the bondMap.
   int numMyElementsUpperBound = oneDimensionalMap->NumMyElements();
-  int numGlobalElements = -1; 
+  int numGlobalElements = -1;
   int numMyElements = 0;
   int maxNumBonds = 0;
   int* oneDimensionalMapGlobalElements = oneDimensionalMap->MyGlobalElements();
@@ -282,7 +282,7 @@ void PeridigmNS::ExodusDiscretization::loadData(const string& meshFileName)
   // Global node numbering
   vector<int> nodeIdMap(numNodes);
   retval = ex_get_id_map(exodusFileId, EX_NODE_MAP, &nodeIdMap[0]);
-  if (retval != 0) reportExodusError(retval, "ExodusDiscretization::loadData()", "ex_get_id_map");    
+  if (retval != 0) reportExodusError(retval, "ExodusDiscretization::loadData()", "ex_get_id_map");
   for(int i=0 ; i<numNodes ; ++i)
     nodeIdMap[i] -= 1; // Note the switch from 1-based indexing to 0-based indexing
 
@@ -352,6 +352,9 @@ void PeridigmNS::ExodusDiscretization::loadData(const string& meshFileName)
   // Create the owned maps
   oneDimensionalMap = Teuchos::rcp(new Epetra_BlockMap(-1, numElem, &elemIdMap[0], 1, 0, *comm));
   threeDimensionalMap = Teuchos::rcp(new Epetra_BlockMap(-1, numElem, &elemIdMap[0], 3, 0, *comm));
+  //NOTE: Creating the seven d map here wastes memory for the case that multiphysics is not enabled.
+  //sevenDimensionalMap = Teuchos::rcp(new Epetra_BlockMap(-1, numElem, &elemIdMap[0], 7, 0, *comm));
+
 
   // Create Epetra_Vectors for the initial positions, volumes, and block_ids
   initialX = Teuchos::rcp(new Epetra_Vector(*threeDimensionalMap));
@@ -814,6 +817,9 @@ PeridigmNS::ExodusDiscretization::getGlobalOwnedMap(int d) const
     case 3:
       return threeDimensionalMap;
       break;
+    //case 7:
+    //  return sevenDimensionalMap;
+    //  break;
     default:
       TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter, 
                          endl << "ExodusDiscretization::getGlobalOwnedMap(int d) only supports dimensions d=1 or d=3. Supplied dimension d=" << d << endl); 
@@ -1128,7 +1134,7 @@ void PeridigmNS::ExodusDiscretization::reportExodusError(int errorCode, const ch
     if (numPID > 1) ss << "Error on PID #" << myPID << ": ";
     ss << "PeridigmNS::OutputManager_ExodusII::" << methodName << "() -- Error code: " << errorCode << " (" << exodusMethodName << ")";
     TEUCHOS_TEST_FOR_EXCEPTION(1, invalid_argument, ss.str());
-  }  
+  }
   else {
     if (numPID > 1) ss << "Warning on PID #" << myPID << ": ";
     ss << "PeridigmNS::OutputManager_ExodusII::" << methodName << "() -- Warning code: " << errorCode << " (" << exodusMethodName << ")";
@@ -1146,7 +1152,7 @@ void PeridigmNS::ExodusDiscretization::reportExodusError(int errorCode, const ch
 //   // Check face diagonals
 
 //   // Check element diagonals
-  
+
 //   // Exodus nodes 1 7
 //   dx = nodeCoordinates[0][0] - nodeCoordinates[6][0];
 //   dy = nodeCoordinates[0][1] - nodeCoordinates[6][1];

@@ -84,15 +84,24 @@ void create_string_maps()
   spatial_coordinate_string[NO_SUCH_SPATIAL_COORDINATE]                                   = "NO_SUCH_SPATIAL_COORDINATE";
 
   boundary_condition_string[PRESCRIBED_DISPLACEMENT]                                      = "PRESCRIBED_DISPLACEMENT";
-  boundary_condition_string[PRESCRIBED_FLUID_PRESSURE_U]                                      = "PRESCRIBED_FLUID_PRESSURE_U";
+  boundary_condition_string[PRESCRIBED_PORE_PRESSURE]                                     = "PRESCRIBED_PORE_PRESSURE";
+  boundary_condition_string[PRESCRIBED_FRAC_PRESSURE]                                     = "PRESCRIBED_FRAC_PRESSURE";
+  boundary_condition_string[PRESCRIBED_PHASE_1_SAT_PORES]                                 = "PRESCRIBED_PHASE_1_SAT_PORES";
+  boundary_condition_string[PRESCRIBED_PHASE_1_SAT_FRAC]                                  = "PRESCRIBED_PHASE_1_SAT_FRAC";
   boundary_condition_string[PRESCRIBED_TEMPERATURE]                                       = "PRESCRIBED_TEMPERATURE";
   boundary_condition_string[INITIAL_TEMPERATURE]                                          = "INITIAL_TEMPERATURE";
   boundary_condition_string[INITIAL_DISPLACEMENT]                                         = "INITIAL_DISPLACEMENT";
   boundary_condition_string[INITIAL_VELOCITY]                                             = "INITIAL_VELOCITY";
-  boundary_condition_string[INITIAL_FLUID_PRESSURE_U]                                       = "INITIAL_FLUID_PRESSURE_U";
+  boundary_condition_string[INITIAL_PORE_PRESSURE]                                        = "INITIAL_PORE_PRESSURE";
+  boundary_condition_string[INITIAL_FRAC_PRESSURE]                                        = "INITIAL_FRAC_PRESSURE";
+  boundary_condition_string[INITIAL_PHASE_1_SAT_PORES]                                    = "INITIAL_PHASE_1_SAT_PORES";
+  boundary_condition_string[INITIAL_PHASE_1_SAT_FRAC]                                     = "INITIAL_PHASE_1_SAT_FRAC";
   boundary_condition_string[BODY_FORCE]                                                   = "BODY_FORCE";
+  boundary_condition_string[PHASE_1_PORE_FLOW]                                            = "PHASE_1_PORE_FLOW";
+  boundary_condition_string[PHASE_1_FRAC_FLOW]                                            = "PHASE_1_FRAC_FLOW";
+  boundary_condition_string[PHASE_2_PORE_FLOW]                                            = "PHASE_2_PORE_FLOW";
+  boundary_condition_string[PHASE_2_FRAC_FLOW]                                            = "PHASE_2_FRAC_FLOW";
   boundary_condition_string[NO_SUCH_BOUNDARY_CONDITION_TYPE]                              = "NO_SUCH_BOUNDARY_CONDITION_TYPE";
-
 
   for (std::map<Set_Definition,std::string>::iterator pos = set_definition_string.begin(); pos != set_definition_string.end(); ++pos)
   {
@@ -317,5 +326,3 @@ bool is_initial(const Boundary_Condition_Type & bc_type){
   const std::string test_str = "INITIAL";
   return bc_str.find("INITIAL")!=std::string::npos;
 }
-
-

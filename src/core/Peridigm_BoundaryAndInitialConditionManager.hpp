@@ -97,14 +97,47 @@ namespace PeridigmNS {
     //! Apply all boundary conditions
     void applyForceContributions(const double & timeCurrent=0.0, const double & timePrevious=0.0);
 
+    //! Apply the fluid flow boundary conditions
+    void applyPhaseOnePoreFlowContributions(const double & timeCurrent=0.0, const double & timePrevious=0.0);
+
+    //! Apply the fluid flow boundary conditions
+    void applyPhaseOneFracFlowContributions(const double & timeCurrent=0.0, const double & timePrevious=0.0);
+
+    //! Apply the fluid flow boundary conditions
+    void applyPhaseTwoPoreFlowContributions(const double & timeCurrent=0.0, const double & timePrevious=0.0);
+
+    //! Apply the fluid flow boundary conditions
+    void applyPhaseTwoFracFlowContributions(const double & timeCurrent=0.0, const double & timePrevious=0.0);
+
     //! Apply all boundary conditions
     void clearForceContributions();
+
+    //! Clear the fluid flow contributions
+    void clearPhaseOnePoreFlowContributions();
+
+    //! Clear the fluid flow contributions
+    void clearPhaseOneFracFlowContributions();
+
+    //! Clear the fluid flow contributions
+    void clearPhaseTwoPoreFlowContributions();
+
+    //! Clear the fluid flow contributions
+    void clearPhaseTwoFracFlowContributions();
 
     //! Update the current coordinates
     void updateCurrentCoordinates();
 
-		//! Update the current fluid pressure
-		void updateFluidPressureY();
+    //! Update the current fluid pressure
+    void updatePorePressureY();
+
+    //! Update the current fluid pressure
+    void updateFracPressureY();
+
+    //! Update the current fluid saturation in pores
+    void updatePhaseOneSatPoresY();
+
+    //! Update the current fluid saturation in fractures
+    void updatePhaseOneSatFracY();
 
     //! Copies entries corresponding to kinematic boundary contitions into the vector of reaction forces.
     void applyKinematicBC_ComputeReactions(Teuchos::RCP<const Epetra_Vector> force, Teuchos::RCP<Epetra_Vector> reaction, const int numMultiphysDoFs);
@@ -141,7 +174,11 @@ namespace PeridigmNS {
     //! Set of all the force contributions
     vector<Teuchos::RCP<BoundaryCondition> > forceContributions;
 
-
+	  //! Set of all the fluid flow contribtuions
+	  vector<Teuchos::RCP<BoundaryCondition> > phaseOnePoreFlowContributions;
+    vector<Teuchos::RCP<BoundaryCondition> > phaseOneFracFlowContributions;
+    vector<Teuchos::RCP<BoundaryCondition> > phaseTwoPoreFlowContributions;
+    vector<Teuchos::RCP<BoundaryCondition> > phaseTwoFracFlowContributions;
 
   private:
 

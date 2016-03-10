@@ -48,7 +48,7 @@
 #include <Teuchos_Assert.hpp>
 #include "Peridigm_MaterialFactory.hpp"
 #include "Peridigm_ElasticMaterial.hpp"
-#include "Peridigm_MultiphysicsElasticMaterial.hpp"
+#include "Peridigm_TwoPhaseMultiphysicsElasticMaterial.hpp"
 #include "Peridigm_ElasticPlasticMaterial.hpp"
 #include "Peridigm_ElasticPlasticHardeningMaterial.hpp"
 #include "Peridigm_ViscoelasticMaterial.hpp"
@@ -79,8 +79,8 @@ PeridigmNS::MaterialFactory::create(const Teuchos::ParameterList& materialParams
   Teuchos::RCP<PeridigmNS::Material> materialModel;
   if (materialModelName == "Elastic")
     materialModel = Teuchos::rcp( new ElasticMaterial(materialParams) );
-  else if (materialModelName == "Multiphysics Elastic")
-    materialModel = Teuchos::rcp( new MultiphysicsElasticMaterial(materialParams) );
+  else if (materialModelName == "Two Phase Multiphysics Elastic")
+    materialModel = Teuchos::rcp( new TwoPhaseMultiphysicsElasticMaterial(materialParams) );
   else if (materialModelName == "Elastic Plastic")
     materialModel = Teuchos::rcp( new ElasticPlasticMaterial(materialParams) );
   else if (materialModelName == "Elastic Plastic Hardening")
@@ -129,7 +129,7 @@ PeridigmNS::MaterialFactory::create(const Teuchos::ParameterList& materialParams
     materialModel = Teuchos::rcp( new LammiConcreteModel(materialParams) );
 #else
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "\n**** Pressure Dependent Elastic Plastic material model unavailable, recompile with -DUSE_CJL.\n");
-#endif    
+#endif
   }
   else {
     std::string invalidMaterial("\n**** Unrecognized material model: ");
@@ -137,6 +137,6 @@ PeridigmNS::MaterialFactory::create(const Teuchos::ParameterList& materialParams
     invalidMaterial += ", must be \"Elastic\" or \"Elastic Plastic\" or \"Elastic Plastic Hardening\" or \"Viscoelastic\" or \"Elastic Correspondence\" or \"LCM\" or \"Vector Poisson\".\n";
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, invalidMaterial);
   }
-  
+
   return materialModel;
 }

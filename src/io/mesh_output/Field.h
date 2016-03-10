@@ -86,11 +86,28 @@ enum Type {
   PLASTIC_CONSISTENCY,
   NORM_DEVIATORIC_FORCE_STATE,
   NUM_NEIGHBORS,
-  FLUID_PRESSURE_Y,
-  FLUID_PRESSURE_U,
-  FLUID_PRESSURE_V,
-  FLUX,
-  FLUX_DENSITY,
+  PHASE_1_SATURATION_PORES_Y,
+  PHASE_1_SATURATION_PORES_U,
+  PHASE_1_SATURATION_PORES_V,
+  PHASE_1_SATURATION_FRACTURE_Y,
+  PHASE_1_SATURATION_FRACTURE_U,
+  PHASE_1_SATURATION_FRACTURE_V,
+  FRACTURE_WIDTH,
+  FRACTURE_DAMAGE_PRINCIPLE_DIRECTION,
+  PORE_PRESSURE_Y,
+  PORE_PRESSURE_U,
+  PORE_PRESSURE_V,
+  FRACTURE_PRESSURE_Y,
+  FRACTURE_PRESSURE_U,
+  FRACTURE_PRESSURE_V,
+  PHASE_1_PORE_FLOW,
+  PHASE_1_PORE_FLOW_DENSITY,
+  PHASE_1_FRACTURE_FLOW,
+  PHASE_1_FRACTURE_FLOW_DENSITY,
+  PHASE_2_PORE_FLOW,
+  PHASE_2_PORE_FLOW_DENSITY,
+  PHASE_2_FRACTURE_FLOW,
+  PHASE_2_FRACTURE_FLOW_DENSITY,
   COORDINATES,
   TANGENT_REFERENCE_COORDINATES,
   DISPLACEMENT,
@@ -252,11 +269,36 @@ const Field_NS::FieldSpec GLOBAL_ANGULAR_MOMENTUM(Field_ENUM::ANGULAR_MOMENTUM, 
 /*
  * Multiphysics fieldspecs
  */
-const Field_NS::FieldSpec FLUID_PRESSURE_Y						(Field_ENUM::FLUID_PRESSURE_Y,      Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Fluid_Pressure_Y");
-const Field_NS::FieldSpec FLUID_PRESSURE_U						(Field_ENUM::FLUID_PRESSURE_U,      Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Fluid_Pressure_U");
-const Field_NS::FieldSpec FLUID_PRESSURE_V						(Field_ENUM::FLUID_PRESSURE_V,      Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Fluid_Pressure_V");
-const Field_NS::FieldSpec FLUX                        (Field_ENUM::FLUX,                  Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Flux");
-const Field_NS::FieldSpec FLUX_DENSITY                (Field_ENUM::FLUX_DENSITY,          Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Flux_Density");
+const Field_NS::FieldSpec PHASE_1_SATURATION_PORES_Y (Field_ENUM::PHASE_1_SATURATION_PORES_Y,  Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_1_Saturation_Pores_Y");
+const Field_NS::FieldSpec PHASE_1_SATURATION_PORES_U (Field_ENUM::PHASE_1_SATURATION_PORES_U,  Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_1_Saturations_Pores_U");
+const Field_NS::FieldSpec PHASE_1_SATURATION_PORES_V (Field_ENUM::PHASE_1_SATURATION_PORES_V,  Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_1_Saturation_Pores_U");
+
+const Field_NS::FieldSpec PHASE_1_SATURATION_FRACTURE_Y (Field_ENUM::PHASE_1_SATURATION_FRACTURE_Y,  Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_1_Saturation_Frac_Y");
+const Field_NS::FieldSpec PHASE_1_SATURATION_FRACTURE_U (Field_ENUM::PHASE_1_SATURATION_FRACTURE_U,  Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_1_Saturation_Frac_U");
+const Field_NS::FieldSpec PHASE_1_SATURATION_FRACTURE_V (Field_ENUM::PHASE_1_SATURATION_FRACTURE_V,  Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_1_Saturation_Frac_V");
+
+const Field_NS::FieldSpec PORE_PRESSURE_Y(Field_ENUM::PORE_PRESSURE_Y,      Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Pore_Pressure_Y");
+const Field_NS::FieldSpec PORE_PRESSURE_U(Field_ENUM::PORE_PRESSURE_U,      Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Pore_Pressure_U");
+const Field_NS::FieldSpec PORE_PRESSURE_V(Field_ENUM::PORE_PRESSURE_V,      Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Pore_Pressure_V");
+
+const Field_NS::FieldSpec FRACTURE_PRESSURE_Y(Field_ENUM::FRACTURE_PRESSURE_Y,      Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Frac_Pressure_Y");
+const Field_NS::FieldSpec FRACTURE_PRESSURE_U(Field_ENUM::FRACTURE_PRESSURE_U,      Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Frac_Pressure_U");
+const Field_NS::FieldSpec FRACTURE_PRESSURE_V(Field_ENUM::FRACTURE_PRESSURE_V,      Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Frac_Pressure_V");
+
+const Field_NS::FieldSpec PHASE_1_PORE_FLOW            (Field_ENUM::PHASE_1_PORE_FLOW,                  Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_1_Pore_Flow");
+const Field_NS::FieldSpec PHASE_1_PORE_FLOW_DENSITY    (Field_ENUM::PHASE_1_PORE_FLOW_DENSITY,          Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_1_Pore_Flow_Density");
+
+const Field_NS::FieldSpec PHASE_1_FRACTURE_FLOW            (Field_ENUM::PHASE_1_FRACTURE_FLOW,                  Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_1_Frac_Flow");
+const Field_NS::FieldSpec PHASE_1_FRACTURE_FLOW_DENSITY    (Field_ENUM::PHASE_1_FRACTURE_FLOW_DENSITY,          Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_1_Frac_Flow_Density");
+
+const Field_NS::FieldSpec PHASE_2_PORE_FLOW            (Field_ENUM::PHASE_2_PORE_FLOW,                  Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_2_Pore_Flow");
+const Field_NS::FieldSpec PHASE_2_PORE_FLOW_DENSITY    (Field_ENUM::PHASE_2_PORE_FLOW_DENSITY,          Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_2_Pore_Flow_Density");
+
+const Field_NS::FieldSpec PHASE_2_FRACTURE_FLOW            (Field_ENUM::PHASE_2_FRACTURE_FLOW,                  Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_2_Frac_Flow");
+const Field_NS::FieldSpec PHASE_2_FRACTURE_FLOW_DENSITY    (Field_ENUM::PHASE_2_FRACTURE_FLOW_DENSITY,          Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_2_Frac_Flow_Density");
+
+const Field_NS::FieldSpec FRACTURE_WIDTH (Field_ENUM::FRACTURE_WIDTH,  Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Frac_Width");
+const Field_NS::FieldSpec FRACTURE_DAMAGE_PRINCIPLE_DIRECTION (Field_ENUM::FRACTURE_DAMAGE_PRINCIPLE_DIRECTION,  Field_ENUM::ELEMENT, Field_ENUM::VECTOR3D, Field_ENUM::TWO_STEP, "Frac_Damage_Principle_Direction");
 
 /*
  * ELEMENT SCALAR FieldSpecs (scalar fields defined over elements)
@@ -309,65 +351,82 @@ const Field_NS::FieldSpec DEVIATORIC_PLASTIC_EXTENSION(Field_ENUM::E_DP,        
 const Field_NS::FieldSpec DEVIATORIC_BACK_EXTENSION   (Field_ENUM::E_DB,           Field_ENUM::BOND, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Deviatoric_Back_Extension");
 
 struct FieldSpecMap {
-	static std::map<string, FieldSpec> create_map() {
-		std::map<string,FieldSpec> mymap;
-                // Undefined fieldspec
-		mymap[FIELDSPEC_UNDEFINED.getLabel()]          = FIELDSPEC_UNDEFINED;
-                // global scalar fieldspecs
-		mymap[GLOBAL_KINETIC_ENERGY.getLabel()]        = GLOBAL_KINETIC_ENERGY;
-        mymap[GLOBAL_STRAIN_ENERGY.getLabel()]         = GLOBAL_STRAIN_ENERGY;
-		mymap[GLOBAL_STRAIN_ENERGY_DENSITY.getLabel()] = GLOBAL_STRAIN_ENERGY_DENSITY;
-		mymap[GLOBAL_LINEAR_MOMENTUM.getLabel()]       = GLOBAL_LINEAR_MOMENTUM;
-		mymap[GLOBAL_ANGULAR_MOMENTUM.getLabel()]      = GLOBAL_ANGULAR_MOMENTUM;
-		// point scalar fieldspecs
-    	mymap[FLUID_PRESSURE_Y.getLabel()]    = FLUID_PRESSURE_Y;
-    	mymap[FLUID_PRESSURE_U.getLabel()]    = FLUID_PRESSURE_U;
-    	mymap[FLUID_PRESSURE_V.getLabel()]    = FLUID_PRESSURE_V;
-    	mymap[FLUX.getLabel()]                         = FLUX;
-    	mymap[FLUX_DENSITY.getLabel()]                 = FLUX_DENSITY;
-		mymap[VOLUME.getLabel()]                       = VOLUME;
-		mymap[DENSITY.getLabel()]                      = DENSITY;
-		mymap[GID.getLabel()]                          = GID;
-		mymap[BLOCK_ID.getLabel()]                     = BLOCK_ID;
-		mymap[PROC_NUM.getLabel()]                     = PROC_NUM;
-		mymap[WEIGHTED_VOLUME.getLabel()]              = WEIGHTED_VOLUME;
-		mymap[RADIUS.getLabel()]                       = RADIUS;
-		mymap[NEIGHBORHOOD_VOLUME.getLabel()]          = NEIGHBORHOOD_VOLUME;
-		mymap[NUMBER_OF_NEIGHBORS.getLabel()]          = NUMBER_OF_NEIGHBORS;
-		mymap[CRITICAL_TIME_STEP.getLabel()]           = CRITICAL_TIME_STEP;
-		mymap[DILATATION.getLabel()]                   = DILATATION;
-		mymap[NUM_NEIGHBORS.getLabel()]                = NUM_NEIGHBORS;
-		mymap[LAMBDA.getLabel()]                       = LAMBDA;
-		mymap[NORM_TD.getLabel()]                      = NORM_TD;
-		mymap[BC_MASK.getLabel()]                      = BC_MASK;
-    	mymap[DAMAGE.getLabel()]                       = DAMAGE;
-    	mymap[CRITICAL_STRETCH.getLabel()]             = CRITICAL_STRETCH;
-		mymap[KINETIC_ENERGY.getLabel()]               = KINETIC_ENERGY;
-		mymap[STRAIN_ENERGY.getLabel()]                = STRAIN_ENERGY;
-		mymap[STRAIN_ENERGY_DENSITY.getLabel()]        = STRAIN_ENERGY_DENSITY;
-		mymap[INTERFACE_PROXIMITY.getLabel()]          = INTERFACE_PROXIMITY;
-                // point vector fieldspecs
-		mymap[COORD3D.getLabel()]                      = COORD3D;
-		mymap[TANGENT_REFERENCE_COORDINATES.getLabel()]                      = TANGENT_REFERENCE_COORDINATES;
-		mymap[DISPL3D.getLabel()]                      = DISPL3D;
-		mymap[CURCOORD3D.getLabel()]                   = CURCOORD3D;
-		mymap[VELOC3D.getLabel()]                      = VELOC3D;
-		mymap[ACCEL3D.getLabel()]                      = ACCEL3D;
-		mymap[FORCE3D.getLabel()]                      = FORCE3D;
-		mymap[FORCE_DENSITY3D.getLabel()]              = FORCE_DENSITY3D;
-		mymap[CONTACT_FORCE3D.getLabel()]              = CONTACT_FORCE3D;
-		mymap[CONTACT_FORCE_DENSITY3D.getLabel()]      = CONTACT_FORCE_DENSITY3D;
-		mymap[RESID3D.getLabel()]                      = RESID3D;
-		mymap[ANGULAR_MOMENTUM3D.getLabel()]           = ANGULAR_MOMENTUM3D;
-		mymap[LINEAR_MOMENTUM3D.getLabel()]            = LINEAR_MOMENTUM3D;
-                // bond scalar fieldspecs
-		mymap[BOND_DAMAGE.getLabel()]                  = BOND_DAMAGE;
-		mymap[PARTIAL_VOLUME.getLabel()]               = PARTIAL_VOLUME;
-		mymap[DEVIATORIC_PLASTIC_EXTENSION.getLabel()] = DEVIATORIC_PLASTIC_EXTENSION;
-		mymap[DEVIATORIC_BACK_EXTENSION.getLabel()]    = DEVIATORIC_BACK_EXTENSION ;
-		return mymap;
-	};
-	static const std::map<string, FieldSpec> Map;
+  static std::map<string, FieldSpec> create_map() {
+    std::map<string,FieldSpec> mymap;
+    // Undefined fieldspec
+    mymap[FIELDSPEC_UNDEFINED.getLabel()]          = FIELDSPEC_UNDEFINED;
+    // global scalar fieldspecs
+    mymap[GLOBAL_KINETIC_ENERGY.getLabel()]        = GLOBAL_KINETIC_ENERGY;
+    mymap[GLOBAL_STRAIN_ENERGY.getLabel()]         = GLOBAL_STRAIN_ENERGY;
+    mymap[GLOBAL_STRAIN_ENERGY_DENSITY.getLabel()] = GLOBAL_STRAIN_ENERGY_DENSITY;
+    mymap[GLOBAL_LINEAR_MOMENTUM.getLabel()]       = GLOBAL_LINEAR_MOMENTUM;
+    mymap[GLOBAL_ANGULAR_MOMENTUM.getLabel()]      = GLOBAL_ANGULAR_MOMENTUM;
+    // point scalar fieldspecs
+    mymap[PHASE_1_SATURATION_PORES_Y.getLabel()]   = PHASE_1_SATURATION_PORES_Y;
+    mymap[PHASE_1_SATURATION_PORES_U.getLabel()]   = PHASE_1_SATURATION_PORES_U;
+    mymap[PHASE_1_SATURATION_PORES_V.getLabel()]   = PHASE_1_SATURATION_PORES_V;
+    mymap[PHASE_1_SATURATION_FRACTURE_Y.getLabel()]= PHASE_1_SATURATION_FRACTURE_Y;
+    mymap[PHASE_1_SATURATION_FRACTURE_U.getLabel()]= PHASE_1_SATURATION_FRACTURE_U;
+    mymap[PHASE_1_SATURATION_FRACTURE_V.getLabel()]= PHASE_1_SATURATION_FRACTURE_V;
+    mymap[PORE_PRESSURE_Y.getLabel()]              = PORE_PRESSURE_Y;
+    mymap[PORE_PRESSURE_U.getLabel()]              = PORE_PRESSURE_U;
+    mymap[PORE_PRESSURE_V.getLabel()]              = PORE_PRESSURE_V;
+    mymap[FRACTURE_PRESSURE_Y.getLabel()]          = FRACTURE_PRESSURE_Y;
+    mymap[FRACTURE_PRESSURE_U.getLabel()]          = FRACTURE_PRESSURE_U;
+    mymap[FRACTURE_PRESSURE_V.getLabel()]          = FRACTURE_PRESSURE_V;
+    mymap[PHASE_1_PORE_FLOW.getLabel()]            = PHASE_1_PORE_FLOW;
+    mymap[PHASE_1_PORE_FLOW_DENSITY.getLabel()]    = PHASE_1_PORE_FLOW_DENSITY;
+    mymap[PHASE_1_FRACTURE_FLOW.getLabel()]        = PHASE_1_FRACTURE_FLOW;
+    mymap[PHASE_1_FRACTURE_FLOW_DENSITY.getLabel()]= PHASE_1_FRACTURE_FLOW_DENSITY;
+    mymap[PHASE_2_PORE_FLOW.getLabel()]            = PHASE_2_PORE_FLOW;
+    mymap[PHASE_2_PORE_FLOW_DENSITY.getLabel()]    = PHASE_2_PORE_FLOW_DENSITY;
+    mymap[PHASE_2_FRACTURE_FLOW.getLabel()]        = PHASE_2_FRACTURE_FLOW;
+    mymap[PHASE_2_FRACTURE_FLOW_DENSITY.getLabel()]= PHASE_2_FRACTURE_FLOW_DENSITY;
+    mymap[FRACTURE_WIDTH.getLabel()]               = FRACTURE_WIDTH;
+    mymap[VOLUME.getLabel()]                       = VOLUME;
+    mymap[DENSITY.getLabel()]                      = DENSITY;
+    mymap[GID.getLabel()]                          = GID;
+    mymap[BLOCK_ID.getLabel()]                     = BLOCK_ID;
+    mymap[PROC_NUM.getLabel()]                     = PROC_NUM;
+    mymap[WEIGHTED_VOLUME.getLabel()]              = WEIGHTED_VOLUME;
+    mymap[RADIUS.getLabel()]                       = RADIUS;
+    mymap[NEIGHBORHOOD_VOLUME.getLabel()]          = NEIGHBORHOOD_VOLUME;
+    mymap[NUMBER_OF_NEIGHBORS.getLabel()]          = NUMBER_OF_NEIGHBORS;
+    mymap[CRITICAL_TIME_STEP.getLabel()]           = CRITICAL_TIME_STEP;
+    mymap[DILATATION.getLabel()]                   = DILATATION;
+    mymap[NUM_NEIGHBORS.getLabel()]                = NUM_NEIGHBORS;
+    mymap[LAMBDA.getLabel()]                       = LAMBDA;
+    mymap[NORM_TD.getLabel()]                      = NORM_TD;
+    mymap[BC_MASK.getLabel()]                      = BC_MASK;
+    mymap[DAMAGE.getLabel()]                       = DAMAGE;
+    mymap[CRITICAL_STRETCH.getLabel()]             = CRITICAL_STRETCH;
+    mymap[KINETIC_ENERGY.getLabel()]               = KINETIC_ENERGY;
+    mymap[STRAIN_ENERGY.getLabel()]                = STRAIN_ENERGY;
+    mymap[STRAIN_ENERGY_DENSITY.getLabel()]        = STRAIN_ENERGY_DENSITY;
+    mymap[INTERFACE_PROXIMITY.getLabel()]          = INTERFACE_PROXIMITY;
+    // point vector fieldspecs
+    mymap[FRACTURE_DAMAGE_PRINCIPLE_DIRECTION.getLabel()] = FRACTURE_DAMAGE_PRINCIPLE_DIRECTION;
+    mymap[COORD3D.getLabel()]                      = COORD3D;
+    mymap[TANGENT_REFERENCE_COORDINATES.getLabel()]  = TANGENT_REFERENCE_COORDINATES;
+    mymap[DISPL3D.getLabel()]                      = DISPL3D;
+    mymap[CURCOORD3D.getLabel()]                   = CURCOORD3D;
+    mymap[VELOC3D.getLabel()]                      = VELOC3D;
+    mymap[ACCEL3D.getLabel()]                      = ACCEL3D;
+    mymap[FORCE3D.getLabel()]                      = FORCE3D;
+    mymap[FORCE_DENSITY3D.getLabel()]              = FORCE_DENSITY3D;
+    mymap[CONTACT_FORCE3D.getLabel()]              = CONTACT_FORCE3D;
+    mymap[CONTACT_FORCE_DENSITY3D.getLabel()]      = CONTACT_FORCE_DENSITY3D;
+    mymap[RESID3D.getLabel()]                      = RESID3D;
+    mymap[ANGULAR_MOMENTUM3D.getLabel()]           = ANGULAR_MOMENTUM3D;
+    mymap[LINEAR_MOMENTUM3D.getLabel()]            = LINEAR_MOMENTUM3D;
+    // bond scalar fieldspecs
+    mymap[BOND_DAMAGE.getLabel()]                  = BOND_DAMAGE;
+    mymap[PARTIAL_VOLUME.getLabel()]               = PARTIAL_VOLUME;
+    mymap[DEVIATORIC_PLASTIC_EXTENSION.getLabel()] = DEVIATORIC_PLASTIC_EXTENSION;
+    mymap[DEVIATORIC_BACK_EXTENSION.getLabel()]    = DEVIATORIC_BACK_EXTENSION ;
+    return mymap;
+  };
+  static const std::map<string, FieldSpec> Map;
 };
 
 } // Field_NS

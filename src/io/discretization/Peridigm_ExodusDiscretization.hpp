@@ -177,6 +177,7 @@ namespace PeridigmNS {
     Teuchos::RCP<Epetra_BlockMap> oneDimensionalOverlapMap;
     Teuchos::RCP<Epetra_BlockMap> threeDimensionalMap;
     Teuchos::RCP<Epetra_BlockMap> threeDimensionalOverlapMap;
+    //Teuchos::RCP<Epetra_BlockMap> sevenDimensionalMap;
     Teuchos::RCP<Epetra_BlockMap> bondMap;
 
     //! Minimum element radius

@@ -14,7 +14,7 @@ set(PD_MATERIAL_SOURCES
     isotropic_hardening_correspondence.cxx
     viscoplastic_needleman_correspondence.cxx
     material_utilities.cxx
-    nonlocal_diffusion.cxx
+    two_phase_nonlocal_diffusion.cxx
     pals.cxx
 )
 

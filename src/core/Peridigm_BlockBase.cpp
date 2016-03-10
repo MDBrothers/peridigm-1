@@ -74,6 +74,7 @@ void PeridigmNS::BlockBase::initialize(Teuchos::RCP<const Epetra_BlockMap> globa
 
   neighborhoodData = createNeighborhoodDataFromGlobalNeighborhoodData(globalOverlapScalarPointMap,
                                                                       globalNeighborhoodData);
+
 }
 
 void PeridigmNS::BlockBase::importData(const Epetra_Vector& source, int fieldId, PeridigmField::Step step, Epetra_CombineMode combineMode)
@@ -104,14 +105,14 @@ void PeridigmNS::BlockBase::exportData(Epetra_Vector& target, int fieldId, Perid
     if(target.Map().ElementSize() == 1){
       if(oneDimensionalImporter.is_null())
         oneDimensionalImporter = Teuchos::rcp(new Epetra_Import(*dataManager->getOverlapScalarPointMap(), target.Map()));
-      target.Export(*(dataManager->getData(fieldId, step)), *oneDimensionalImporter, combineMode);  
+      target.Export(*(dataManager->getData(fieldId, step)), *oneDimensionalImporter, combineMode);
     }
 
     // vector data
     else if(target.Map().ElementSize() == 3){
       if(threeDimensionalImporter.is_null())
         threeDimensionalImporter = Teuchos::rcp(new Epetra_Import(*dataManager->getOverlapVectorPointMap(), target.Map()));
-      target.Export(*(dataManager->getData(fieldId, step)), *threeDimensionalImporter, combineMode);  
+      target.Export(*(dataManager->getData(fieldId, step)), *threeDimensionalImporter, combineMode);
     }
   }
 }
@@ -244,7 +245,7 @@ Teuchos::RCP<PeridigmNS::NeighborhoodData> PeridigmNS::BlockBase::createNeighbor
   int* const globalNeighborhoodPtr = globalNeighborhoodData->NeighborhoodPtr();
 
   // Create the neighborhoodList and neighborhoodPtr for this block.
-  // All the IDs in the neighborhoodList and neighborhoodPtr are local IDs into 
+  // All the IDs in the neighborhoodList and neighborhoodPtr are local IDs into
   // the block-specific overlap map.
 
   for(int i=0 ; i<numOwnedPoints ; ++i){
@@ -265,12 +266,12 @@ Teuchos::RCP<PeridigmNS::NeighborhoodData> PeridigmNS::BlockBase::createNeighbor
   Teuchos::RCP<PeridigmNS::NeighborhoodData> blockNeighborhoodData = Teuchos::rcp(new PeridigmNS::NeighborhoodData);
   blockNeighborhoodData->SetNumOwned(ownedIDs.size());
   if(ownedIDs.size() > 0){
-    memcpy(blockNeighborhoodData->OwnedIDs(), 
+    memcpy(blockNeighborhoodData->OwnedIDs(),
            &ownedIDs.at(0),
            ownedIDs.size()*sizeof(int));
   }
   if(neighborhoodPtr.size() > 0){
-    memcpy(blockNeighborhoodData->NeighborhoodPtr(), 
+    memcpy(blockNeighborhoodData->NeighborhoodPtr(),
            &neighborhoodPtr.at(0),
            neighborhoodPtr.size()*sizeof(int));
   }
@@ -294,7 +295,7 @@ void PeridigmNS::BlockBase::initializeDataManager(vector<int> fieldIds)
                               overlapVectorPointMap.is_null() ||
                               ownedScalarBondMap.is_null(),
                               "\n**** Maps must be set prior to calling BlockBase::initializeDataManager()\n");
-  
+
   dataManager = Teuchos::rcp(new PeridigmNS::DataManager);
 
   dataManager->setMaps(ownedScalarPointMap,
@@ -302,11 +303,12 @@ void PeridigmNS::BlockBase::initializeDataManager(vector<int> fieldIds)
                        ownedVectorPointMap,
                        overlapVectorPointMap,
                        ownedScalarBondMap);
-  
+
   // remove duplicates
   sort(fieldIds.begin(), fieldIds.end());
   vector<int>::iterator newEnd = unique(fieldIds.begin(), fieldIds.end());
   fieldIds.erase(newEnd, fieldIds.end());
+
 
   // Allocate data in the data manager
   dataManager->allocateData(fieldIds);

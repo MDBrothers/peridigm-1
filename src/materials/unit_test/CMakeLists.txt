@@ -23,16 +23,3 @@ target_link_libraries(utPeridigm_ElasticMaterial
   ${Boost_LIBRARIES}
 )
 add_test (utPeridigm_ElasticMaterial python ${CMAKE_BINARY_DIR}/scripts/run_unit_test.py ./utPeridigm_ElasticMaterial)
-
-
-add_executable(utPeridigm_MultiphysicsElasticMaterial ./utPeridigm_MultiphysicsElasticMaterial.cpp)
-target_link_libraries(utPeridigm_MultiphysicsElasticMaterial
-  ${Peridigm_LIBRARY}
-  ${Trilinos_LIBRARIES}
-  ${PdMaterialUtilitiesLib}
-  PdField
-  ${PARSER_LIBS}
-  ${REQUIRED_LIBS}
-  ${Boost_LIBRARIES}
-)
-add_test (utPeridigm_MultiphysicsElasticMaterial python ${CMAKE_BINARY_DIR}/scripts/run_unit_test.py ./utPeridigm_MultiphysicsElasticMaterial)
