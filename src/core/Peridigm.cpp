@@ -90,7 +90,7 @@
 #include <Ifpack_IC.h>
 #include <Teuchos_VerboseObject.hpp>
 
-// required for restart 
+// required for restart
 #include "EpetraExt_MultiVectorIn.h"
 #include "EpetraExt_VectorIn.h"
 #include "EpetraExt_VectorOut.h"
@@ -150,8 +150,8 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   peridigmComm = Teuchos::rcp(new Epetra_SerialComm);
 #endif
   if(peridigmComm->MyPID() == 0)
-	  if(params->isParameter("Multiphysics") && params->isParameter("Restart") ){
-		  TEUCHOS_TEST_FOR_EXCEPT_MSG((params->isParameter("Multiphysics") && params->isParameter("Restart") ), "Error: Restart for Multiphysics is not implemented yet.\n");
+	  if(params->isParameter("Two Phase Multiphysics") && params->isParameter("Restart") ){
+		  TEUCHOS_TEST_FOR_EXCEPT_MSG((params->isParameter("Two Phase Multiphysics") && params->isParameter("Restart") ), "Error: Restart for Multiphysics is not implemented yet.\n");
 		  MPI_Finalize();
 		  exit(0);
 	  }
@@ -173,7 +173,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   {
     if(peridigmComm->MyPID() == 0) std::cout<< "\n**** Two Phase Multiphysics is selected.\n" << std::endl;
     analysisHasMultiphysics = true;
-    //numMultiphysDoFs = 4; //This is in the initialization list already.
+    numMultiphysDoFs = 4;
   }
   else
   {
