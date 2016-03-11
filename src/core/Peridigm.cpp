@@ -1245,6 +1245,9 @@ void PeridigmNS::Peridigm::execute(Teuchos::RCP<Teuchos::ParameterList> solverPa
 
   TEUCHOS_TEST_FOR_EXCEPT_MSG(solverParams.is_null(), "Error in Peridigm::execute, solverParams is null.\n");
 
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(analysisHasMultiphysics && !(solverParams->isSublist("NOXQuasiStatic")), "Error in Peridigm::execute, only NOXQuasiStatic supported for Two Phase Multiphysics.\n");
+
+
   // allowable explicit time integration schemes:  Verlet
   if(solverParams->isSublist("Verlet")){
     executeExplicit(solverParams);}
@@ -2405,10 +2408,7 @@ void PeridigmNS::Peridigm::executeQuasiStatic(Teuchos::RCP<Teuchos::ParameterLis
   Teuchos::RCP<Epetra_Vector> lhs = Teuchos::rcp(new Epetra_Vector(tangent->Map()));
   Teuchos::RCP<Epetra_Vector> reaction;
 
-  if(analysisHasMultiphysics)
-    reaction = Teuchos::rcp(new Epetra_Vector(combinedForce->Map()));
-  else
-    reaction = Teuchos::rcp(new Epetra_Vector(force->Map()));
+  reaction = Teuchos::rcp(new Epetra_Vector(force->Map()));
 
   const bool disableHeuristics = solverParams->get("Disable Heuristics", false);
   if(disableHeuristics && peridigmComm->MyPID() == 0)
@@ -2417,16 +2417,6 @@ void PeridigmNS::Peridigm::executeQuasiStatic(Teuchos::RCP<Teuchos::ParameterLis
   // Vector for predictor
   //Epetra_Vector predictor(v->Map());
   Teuchos::RCP<Epetra_Vector> predictor;
-  Teuchos::RCP<Epetra_Vector> predictorPorePressure;
-  Teuchos::RCP<Epetra_Vector> predictorFracPressure;
-  Teuchos::RCP<Epetra_Vector> predictorPhaseOneSaturationPores;
-  Teuchos::RCP<Epetra_Vector> predictorPhaseOneSaturationFrac;
-  if(analysisHasMultiphysics){
-    predictorPorePressure = Teuchos::rcp(new Epetra_Vector(porePressureV->Map()));
-    predictorFracPressure = Teuchos::rcp(new Epetra_Vector(fracturePressureV->Map()));
-    predictorPhaseOneSaturationPores = Teuchos::rcp(new Epetra_Vector(phaseOneSaturationPoresV->Map()));
-    predictorPhaseOneSaturationFrac = Teuchos::rcp(new Epetra_Vector(phaseOneSaturationFracV->Map()));
-  }
   predictor = Teuchos::rcp(new Epetra_Vector(v->Map()));
 
   bool solverVerbose = solverParams->get("Verbose", false);
@@ -2446,47 +2436,14 @@ void PeridigmNS::Peridigm::executeQuasiStatic(Teuchos::RCP<Teuchos::ParameterLis
   // Pointer index into sub-vectors for use with BLAS
   // Pointers into mothership vectors
   double *xPtr, *uPtr, *yPtr, *vPtr, *aPtr, *deltaUPtr;
-  double *porePressureUPtr, *porePressureDeltaUPtr, *porePressureYPtr, *porePressureVPtr;
-  double *fracturePressureUPtr, *fracturePressureDeltaUPtr, *fracturePressureYPtr, *fracturePressureVPtr;
-  double *phaseOneSaturationPoresUPtr, *phaseOneSaturationPoresIncrementPtr, *phaseOneSaturationPoresYPtr, *phaseOneSaturationPoresVPtr;
-  double *phaseOneSaturationFracUPtr, *phaseOneSaturationFracIncrementPtr, *phaseOneSaturationFracYPtr, *phaseOneSaturationFracVPtr;
-
   x->ExtractView( &xPtr );
   u->ExtractView( &uPtr );
   deltaU->ExtractView( &deltaUPtr );
   y->ExtractView( &yPtr );
   v->ExtractView( &vPtr );
   a->ExtractView( &aPtr );
-  if(analysisHasMultiphysics){
-    porePressureU->ExtractView( &porePressureUPtr );
-    porePressureY->ExtractView( &porePressureYPtr );
-    porePressureV->ExtractView( &porePressureVPtr );
-    porePressureDeltaU->ExtractView( &porePressureDeltaUPtr );
-
-    fracturePressureU->ExtractView( &fracturePressureUPtr );
-    fracturePressureY->ExtractView( &fracturePressureYPtr );
-    fracturePressureV->ExtractView( &fracturePressureVPtr );
-    fracturePressureDeltaU->ExtractView( &fracturePressureDeltaUPtr );
-
-    phaseOneSaturationPoresU->ExtractView( &phaseOneSaturationPoresUPtr);
-    phaseOneSaturationPoresY->ExtractView( &phaseOneSaturationPoresYPtr);
-    phaseOneSaturationPoresV->ExtractView( &phaseOneSaturationPoresVPtr);
-    phaseOneSaturationPoresIncrement->ExtractView( &phaseOneSaturationPoresIncrementPtr);
-
-    phaseOneSaturationFracU->ExtractView( &phaseOneSaturationFracUPtr);
-    phaseOneSaturationFracY->ExtractView( &phaseOneSaturationFracYPtr);
-    phaseOneSaturationFracV->ExtractView( &phaseOneSaturationFracVPtr);
-    phaseOneSaturationFracIncrement->ExtractView( &phaseOneSaturationFracIncrementPtr);
-  }
-
   // Initialize velocity to zero
   v->PutScalar(0.0);
-  if(analysisHasMultiphysics){
-    porePressureV->PutScalar(0.0);
-    fracturePressureV->PutScalar(0.0);
-    phaseOneSaturationPoresV->PutScalar(0.0);
-    phaseOneSaturationFracV->PutScalar(0.0);
-  }
 
   // Data for Belos linear solver object
   Belos::LinearProblem<double,Epetra_MultiVector,Epetra_Operator> linearProblem;
@@ -2561,12 +2518,6 @@ void PeridigmNS::Peridigm::executeQuasiStatic(Teuchos::RCP<Teuchos::ParameterLis
 
     // Update nodal positions for nodes with kinematic B.C.
     deltaU->PutScalar(0.0);
-    if(analysisHasMultiphysics){
-      porePressureDeltaU->PutScalar(0.0);
-      fracturePressureDeltaU->PutScalar(0.0);
-      phaseOneSaturationPoresIncrement->PutScalar(0.0);
-      phaseOneSaturationFracIncrement->PutScalar(0.0);
-    }
 
     PeridigmNS::Timer::self().startTimer("Apply Kinematic B.C.");
     boundaryAndInitialConditionManager->applyBoundaryConditions(timeCurrent,timePrevious);
@@ -2575,12 +2526,6 @@ void PeridigmNS::Peridigm::executeQuasiStatic(Teuchos::RCP<Teuchos::ParameterLis
     // evaluate the external (body) forces:
     PeridigmNS::Timer::self().startTimer("Apply Body Forces");
     boundaryAndInitialConditionManager->applyForceContributions(timeCurrent,timePrevious);
-    if(analysisHasMultiphysics){
-      boundaryAndInitialConditionManager->applyPhaseOnePoreFlowContributions(timeCurrent, timePrevious);
-      boundaryAndInitialConditionManager->applyPhaseOneFracFlowContributions(timeCurrent, timePrevious);
-      boundaryAndInitialConditionManager->applyPhaseTwoPoreFlowContributions(timeCurrent, timePrevious);
-      boundaryAndInitialConditionManager->applyPhaseTwoFracFlowContributions(timeCurrent, timePrevious);
-    }
     PeridigmNS::Timer::self().stopTimer("Apply Body Forces");
 
     // Set the current position and velocity
@@ -2589,34 +2534,17 @@ void PeridigmNS::Peridigm::executeQuasiStatic(Teuchos::RCP<Teuchos::ParameterLis
       vPtr[i] = deltaUPtr[i]/timeIncrement;
     }
 
-    if(analysisHasMultiphysics){
-      for(int i=0 ; i<porePressureY->MyLength() ; ++i){
-        porePressureYPtr[i] = porePressureUPtr[i] + porePressureDeltaUPtr[i];
-        porePressureVPtr[i] = porePressureDeltaUPtr[i]/timeIncrement;
-        fracturePressureYPtr[i] = fracturePressureUPtr[i] + fracturePressureDeltaUPtr[i];
-        fracturePressureVPtr[i] = fracturePressureDeltaUPtr[i]/timeIncrement;
-        phaseOneSaturationPoresYPtr[i] = phaseOneSaturationPoresUPtr[i] + phaseOneSaturationPoresIncrementPtr[i];
-        phaseOneSaturationPoresVPtr[i] = phaseOneSaturationPoresIncrementPtr[i]/timeIncrement;
-        phaseOneSaturationFracYPtr[i] = phaseOneSaturationFracUPtr[i] + phaseOneSaturationFracIncrementPtr[i];
-        phaseOneSaturationFracVPtr[i] = phaseOneSaturationFracIncrementPtr[i]/timeIncrement;
-      }
-    }
-
     // compute the residual
     double residualNorm = computeQuasiStaticResidual(residual);
 
     double toleranceMultiplier = 1.0;
     if(!useAbsoluteTolerance){
       // compute the vector of reactions, i.e., the forces corresponding to degrees of freedom for which kinematic B.C. are applied
-      if(analysisHasMultiphysics){
-        boundaryAndInitialConditionManager->applyKinematicBC_ComputeReactions(combinedForce, reaction, 4);
-      }
-      else{
-        boundaryAndInitialConditionManager->applyKinematicBC_ComputeReactions(force, reaction, 0);
-      }
-        // convert force density to force
+      boundaryAndInitialConditionManager->applyKinematicBC_ComputeReactions(force, reaction, 0);
+
+      // convert force density to force
       for(int i=0 ; i<reaction->MyLength() ; ++i){
-        (*reaction)[i] *= (*volume)[i/7];
+        (*reaction)[i] *= (*volume)[i/3];
       }
       double reactionNorm2;
       reaction->Norm2(&reactionNorm2);
@@ -2654,22 +2582,9 @@ void PeridigmNS::Peridigm::executeQuasiStatic(Teuchos::RCP<Teuchos::ParameterLis
 
       // On the first iteration, use a predictor based on the velocity from the previous load step
       if(solverIteration == 1 && step > 1 && !disableHeuristics) {
-        if(analysisHasMultiphysics){
-          for(int i=0 ; i<lhs->MyLength() ; i+=7){
-            for(int j=0; j<3; ++j){
-              (*lhs)[i + j] = (*predictor)[(3*i)/7+j]*timeIncrement;
-            }
-            (*lhs)[i+3] = (*predictorPorePressure)[i/7]*timeIncrement;
-            (*lhs)[i+4] = (*predictorFracPressure)[i/7]*timeIncrement;
-            (*lhs)[i+5] = (*predictorPhaseOneSaturationPores)[i/7]*timeIncrement;
-            (*lhs)[i+6] = (*predictorPhaseOneSaturationFrac)[i/7]*timeIncrement;
-          }
-        }
-        else{
-          for(int i=0 ; i<lhs->MyLength() ; ++i)
+        for(int i=0 ; i<lhs->MyLength() ; ++i)
             (*lhs)[i] = (*predictor)[i]*timeIncrement;
-        }
-        boundaryAndInitialConditionManager->applyKinematicBC_InsertZeros(lhs, numMultiphysDoFs);
+        boundaryAndInitialConditionManager->applyKinematicBC_InsertZeros(lhs, 0);
         isConverged = Belos::Converged;
       }
       else{
@@ -2700,8 +2615,8 @@ void PeridigmNS::Peridigm::executeQuasiStatic(Teuchos::RCP<Teuchos::ParameterLis
 
           TEUCHOS_TEST_FOR_EXCEPT_MSG(err != 0, "**** PeridigmNS::Peridigm::executeQuasiStatic(), GlobalAssemble() returned nonzero error code.\n");
           PeridigmNS::Timer::self().stopTimer("Evaluate Jacobian");
-          boundaryAndInitialConditionManager->applyKinematicBC_InsertZeros(residual, numMultiphysDoFs);
-          boundaryAndInitialConditionManager->applyKinematicBC_InsertZerosAndSetDiagonal(tangent, numMultiphysDoFs);
+          boundaryAndInitialConditionManager->applyKinematicBC_InsertZeros(residual, 0);
+          boundaryAndInitialConditionManager->applyKinematicBC_InsertZerosAndSetDiagonal(tangent, 0);
           tangent->Scale(-1.0);
 
           if(dampedNewton)
@@ -2730,48 +2645,19 @@ void PeridigmNS::Peridigm::executeQuasiStatic(Teuchos::RCP<Teuchos::ParameterLis
 
         // Zero out the entries corresponding to the kinematic boundary conditions
         // The solver should have returned zeros, but there may be small errors.
-        boundaryAndInitialConditionManager->applyKinematicBC_InsertZeros(lhs, numMultiphysDoFs);
+        boundaryAndInitialConditionManager->applyKinematicBC_InsertZeros(lhs, 0);
 
         PeridigmNS::Timer::self().startTimer("Line Search");
         alpha = disableHeuristics ? 1.0 : quasiStaticsLineSearch(residual, lhs, timeIncrement);
         PeridigmNS::Timer::self().stopTimer("Line Search");
 
         // Apply increment to nodal positions
-        if(analysisHasMultiphysics){
-          for(int i=0 ; i<y->MyLength() ; i+=3){
-            const int sevenDI = (7*i)/3;
-            const int oneDI = i/3;
-            for(int j=0 ; j<3 ; ++j){
-              deltaUPtr[i + j] += alpha*(*lhs)[sevenDI + j];
-              yPtr[i + j] = xPtr[i + j] + uPtr[i + j] + deltaUPtr[i + j];
-              vPtr[i + j] = deltaUPtr[i + j]/timeIncrement;
-            }
-            porePressureDeltaUPtr[oneDI] += alpha*(*lhs)[ sevenDI + 3];
-            porePressureYPtr[oneDI] = porePressureUPtr[oneDI] + porePressureDeltaUPtr[oneDI];
-            porePressureVPtr[oneDI] = porePressureDeltaUPtr[oneDI]/timeIncrement;
-
-            fracturePressureDeltaUPtr[oneDI] += alpha*(*lhs)[ sevenDI + 4];
-            fracturePressureYPtr[oneDI] = fracturePressureUPtr[oneDI] + fracturePressureDeltaUPtr[oneDI];
-            fracturePressureVPtr[oneDI] = fracturePressureDeltaUPtr[oneDI]/timeIncrement;
-
-            phaseOneSaturationPoresIncrementPtr[oneDI] += alpha*(*lhs)[sevenDI + 5];
-            phaseOneSaturationPoresYPtr[oneDI] = phaseOneSaturationPoresUPtr[oneDI] + phaseOneSaturationPoresIncrementPtr[oneDI];
-            phaseOneSaturationPoresVPtr[oneDI] = phaseOneSaturationPoresIncrementPtr[oneDI]/timeIncrement;
-
-            phaseOneSaturationFracIncrementPtr[oneDI] += alpha*(*lhs)[sevenDI + 6];
-            phaseOneSaturationFracYPtr[oneDI] = phaseOneSaturationFracUPtr[oneDI] + phaseOneSaturationFracIncrementPtr[oneDI];
-            phaseOneSaturationFracVPtr[oneDI] = phaseOneSaturationFracIncrementPtr[oneDI]/timeIncrement;
-          }
-        }
-        else{
-          for(int i=0 ; i<y->MyLength() ; ++i){
-            deltaUPtr[i] += alpha*(*lhs)[i];
-            yPtr[i] = xPtr[i] + uPtr[i] + deltaUPtr[i];
-            vPtr[i] = deltaUPtr[i]/timeIncrement;
-          }
+        for(int i=0 ; i<y->MyLength() ; ++i){
+          deltaUPtr[i] += alpha*(*lhs)[i];
+          yPtr[i] = xPtr[i] + uPtr[i] + deltaUPtr[i];
+          vPtr[i] = deltaUPtr[i]/timeIncrement;
         }
         residualNorm = computeQuasiStaticResidual(residual);
-
         solverIteration++;
       }
       else{
@@ -2822,33 +2708,10 @@ void PeridigmNS::Peridigm::executeQuasiStatic(Teuchos::RCP<Teuchos::ParameterLis
       cout << setprecision(2) << "  cpu time for load step = " << CPUTime << " sec., cumulative cpu time = " << cumulativeLoadStepCPUTime << " sec.\n" << endl;
 
     // Add the converged displacement increment to the displacement
-    // Make sure even the non participating vectors are updated
-    if(analysisHasMultiphysics){
-    // Store the velocity for use as a predictor in the next load step
-      for(int i=0 ; i<v->MyLength() ; i+=3){
-        const int oneDI = i/3;
-        for(int j=0; j<3; ++j){
-          (*u)[i + j] += (*deltaU)[i + j];
-          (*predictor)[i + j] = (*v)[i + j];
-        }
-        (*porePressureU)[oneDI] += (*porePressureDeltaU)[oneDI];
-        (*predictorPorePressure)[oneDI] = (*porePressureV)[oneDI];
-
-        (*fracturePressureU)[oneDI] += (*fracturePressureDeltaU)[oneDI];
-        (*predictorFracPressure)[oneDI] = (*fracturePressureV)[oneDI];
-
-        (*phaseOneSaturationPoresU)[oneDI] += (*phaseOneSaturationPoresIncrement)[oneDI];
-        (*predictorPhaseOneSaturationPores)[oneDI] = (*phaseOneSaturationPoresV)[oneDI];
-
-        (*phaseOneSaturationFracU)[oneDI] += (*phaseOneSaturationFracIncrement)[oneDI];
-        (*predictorPhaseOneSaturationFrac)[oneDI] = (*phaseOneSaturationFracV)[oneDI];
-      }
-    }
-    else{
-      for(int i=0 ; i<u->MyLength() ; ++i){
-        (*u)[i] += (*deltaU)[i];
-        (*predictor)[i] = (*v)[i];
-      }
+    // Store the velocity as a predictor for the next step
+    for(int i=0 ; i<u->MyLength() ; ++i){
+      (*u)[i] += (*deltaU)[i];
+      (*predictor)[i] = (*v)[i];
     }
 
     // Write output for completed load step
@@ -3795,12 +3658,10 @@ double PeridigmNS::Peridigm::computeQuasiStaticResidual(Teuchos::RCP<Epetra_Vect
     TEUCHOS_TEST_FOR_EXCEPT_MSG(residual->MyLength() != (7*externalPhaseTwoFracFlow->MyLength()), "**** PeridigmNS::Peridigm::computeQuasiStaticResidual() incompatible vector lengths!\n");
     TEUCHOS_TEST_FOR_EXCEPT_MSG(residual->MyLength() != (7*externalPhaseTwoPoreFlow->MyLength()), "**** PeridigmNS::Peridigm::computeQuasiStaticResidual() incompatible vector lengths!\n");
 
-    std::cout << "This happens" << std::endl;
-
     for(int i=0 ; i<residual->MyLength(); i+=7){
-      for(int j =0; j<3 ; ++j){
-        (*residual)[i + j] += (*externalForce)[(3*i)/7 + j];
-      }
+      (*residual)[i+0] += (*externalForce)[3*i/7+0];
+      (*residual)[i+1] += (*externalForce)[3*i/7+1];
+      (*residual)[i+2] += (*externalForce)[3*i/7+2];
       (*residual)[i+3] += (*externalPhaseOnePoreFlow)[i/7];
       (*residual)[i+4] += (*externalPhaseOneFracFlow)[i/7];
       (*residual)[i+5] += (*externalPhaseTwoPoreFlow)[i/7];
