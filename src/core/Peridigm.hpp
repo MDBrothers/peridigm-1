@@ -124,7 +124,7 @@ namespace PeridigmNS {
 
     //! Main routine to drive time integration
     void execute(Teuchos::RCP<Teuchos::ParameterList> solverParams);
-    
+
     //! Called from Main to drive multiple time integration solvers in sequence
     void executeSolvers();
 
@@ -268,7 +268,7 @@ namespace PeridigmNS {
     void executeQuasiStatic(Teuchos::RCP<Teuchos::ParameterList> solverParams);
 
     //! Main routine to drive problem solution for quasistatics using NOX
-    void executeNOXQuasiStatic(Teuchos::RCP<Teuchos::ParameterList> solverParams); 
+    void executeNOXQuasiStatic(Teuchos::RCP<Teuchos::ParameterList> solverParams);
 
     //! Set the preconditioner for the global linear system
     void quasiStaticsSetPreconditioner(Belos::LinearProblem<double,Epetra_MultiVector,Epetra_Operator>& linearProblem);
@@ -309,8 +309,8 @@ namespace PeridigmNS {
     //! Accessor for comm object
     Teuchos::RCP<const Epetra_Comm> getEpetraComm(){ return peridigmComm; }
 
-    //! @name Accessors for maps 
-    //@{ 
+    //! @name Accessors for maps
+    //@{
     Teuchos::RCP<const Epetra_BlockMap> getOneDimensionalMap() { return oneDimensionalMap; }
     Teuchos::RCP<const Epetra_BlockMap> getThreeDimensionalMap() { return threeDimensionalMap; }
     Teuchos::RCP<const Epetra_BlockMap> getBondMap() { return bondMap; }
@@ -318,7 +318,7 @@ namespace PeridigmNS {
     //@}
 
     //! @name Accessors for main solver-level vectors
-    //@{ 
+    //@{
     Teuchos::RCP<Epetra_Vector> getBlockIDs() { return blockIDs; }
     Teuchos::RCP<Epetra_Vector> getX() { return x; }
     Teuchos::RCP<Epetra_Vector> getU() { return u; }
@@ -392,7 +392,7 @@ namespace PeridigmNS {
   private:
 
     //! @name Friend classes
-    //@{ 
+    //@{
     friend class OutputManager_ExodusII;
     //@}
 
@@ -418,7 +418,8 @@ namespace PeridigmNS {
     bool analysisHasContact;
 
     //! Multiphysics flag
-    bool analysisHasMultiphysics;
+    bool twoPhasePoroelasticity;
+    bool onePhasePoroelasticity;
 
     //! Flag for computing element-sphere intersections
     bool computeIntersections;
@@ -670,4 +671,3 @@ namespace PeridigmNS {
 }
 
 #endif // PERIDIGM_HPP
-

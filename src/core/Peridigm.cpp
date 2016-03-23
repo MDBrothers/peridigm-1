@@ -104,7 +104,8 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   : agePeridigmPreconditioner(0),
     maxAgePeridigmPreconditioner(0),
     analysisHasContact(false),
-    analysisHasMultiphysics(false),
+    twoPhasePoroelasticity(false),
+    onePhasePoroelasticity(false),
     computeIntersections(false),
     constructInterfaces(false),
     blockIdFieldId(-1),
@@ -155,6 +156,11 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
 		  MPI_Finalize();
 		  exit(0);
 	  }
+    else if(params->isParameter("One Phase Multiphysics") && params->isParameter("Restart") ){
+		  TEUCHOS_TEST_FOR_EXCEPT_MSG((params->isParameter("One Phase Multiphysics") && params->isParameter("Restart") ), "Error: Restart for Multiphysics is not implemented yet.\n");
+		  MPI_Finalize();
+		  exit(0);
+	  }
   peridigmParams = params;
   // set the comm for memory use statistics
   Memstat * memstat = Memstat::Instance();
@@ -172,22 +178,39 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   if(peridigmParams->isParameter("Two Phase Multiphysics"))
   {
     if(peridigmComm->MyPID() == 0) std::cout<< "\n**** Two Phase Multiphysics is selected.\n" << std::endl;
-    analysisHasMultiphysics = true;
+    twoPhasePoroelasticity = true;
+    onePhasePoroelasticity = false;
     numMultiphysDoFs = 4;
+  }
+  else if(peridigmParams->isParameter("One Phase Multiphysics"))
+  {
+    if(peridigmComm->MyPID() == 0) std::cout<< "\n**** One Phase Multiphysics is selected.\n" << std::endl;
+    twoPhasePoroelasticity = false;
+    onePhasePoroelasticity = true;
+    numMultiphysDoFs = 2;
   }
   else
   {
-    analysisHasMultiphysics = false;
+    twoPhasePoroelasticity = false;
+    onePhasePoroelasticity = false;
     numMultiphysDoFs = 0;
   }
   //We need to make sure that if multiphysics was not specified as a top level parameter, the rest of the
   //input deck jives with that, otherwise a less than graceful segfault will occur due to the boundary condition
   //code running before the material blocks are assigned materials.
-  if(not analysisHasMultiphysics){
+  if(not twoPhasePoroelasticity){
     Teuchos::ParameterList::ConstIterator materialNamesIterator;
     Teuchos::ParameterList materialParams = peridigmParams->sublist("Materials", true);
     for( materialNamesIterator = materialParams.begin() ; materialNamesIterator != materialParams.end() ; ++materialNamesIterator){
       TEUCHOS_TEST_FOR_EXCEPT_MSG(materialParams.name(materialNamesIterator).find("Two Phase Multiphysics") != std::string::npos, "\n**** Error, multiphysics must be enabled at the top level of the input deck if a Multiphysics material is specified.\n");
+      //std::cout << materialParams.name(materialNamesIterator) << std::endl;
+    }
+  }
+  else if(not onePhasePoroelasticity){
+    Teuchos::ParameterList::ConstIterator materialNamesIterator;
+    Teuchos::ParameterList materialParams = peridigmParams->sublist("Materials", true);
+    for( materialNamesIterator = materialParams.begin() ; materialNamesIterator != materialParams.end() ; ++materialNamesIterator){
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(materialParams.name(materialNamesIterator).find("One Phase Multiphysics") != std::string::npos, "\n**** Error, multiphysics must be enabled at the top level of the input deck if a Multiphysics material is specified.\n");
       //std::cout << materialParams.name(materialNamesIterator) << std::endl;
     }
   }
@@ -253,6 +276,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
       //        For the time being, if the users requests NOX with no precondioner, go ahead and allocate the 3x3
       if(peridigmPreconditionerType == "Block 3x3" || peridigmPreconditionerType == "None")
         userSpecifiedBlockDiagonalTangent = true;
+
     }
   }
   bool allocateTangent(false), allocateBlockDiagonalTangent(false);
@@ -293,7 +317,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   horizonFieldId                     = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Horizon");
   volumeFieldId                      = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Volume");
 
-  if(analysisHasMultiphysics){
+  if(twoPhasePoroelasticity){
     porePressureYFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Pore_Pressure_Y");
     porePressureUFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Pore_Pressure_U");
     porePressureVFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Pore_Pressure_V");
@@ -321,6 +345,20 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     phaseTwoPoreExternalFlowDensityFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Phase_2_External_Pore_Flow_Density");
     phaseTwoFracFlowDensityFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Phase_2_Frac_Flow_Density");
     phaseTwoFracExternalFlowDensityFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Phase_2_External_Frac_Flow_Density");
+  }
+  else if(onePhasePoroelasticity){
+    porePressureYFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Pore_Pressure_Y");
+    porePressureUFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Pore_Pressure_U");
+    porePressureVFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Pore_Pressure_V");
+
+    fracturePressureYFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Frac_Pressure_Y");
+    fracturePressureUFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Frac_Pressure_U");
+    fracturePressureVFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Frac_Pressure_V");
+
+    phaseOnePoreFlowDensityFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Phase_1_Pore_Flow_Density");
+    phaseOnePoreExternalFlowDensityFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Phase_1_External_Pore_Flow_Density");
+    phaseOneFracFlowDensityFieldId  = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Phase_1_Frac_Flow_Density");
+    phaseOneFracExternalFlowDensityFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Phase_1_External_Frac_Flow_Density");
   }
 
   modelCoordinatesFieldId            = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::CONSTANT, "Model_Coordinates");
@@ -400,9 +438,10 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     multiphysError += blockName;
     multiphysError += ", material ";
     multiphysError += materialName;
-    multiphysError += ", is not two phase multiphysics compatible.\n";
+    multiphysError += ", is not multiphysics compatible.\n";
     //The following: If we tried to enable multiphysics, but aren't using the right material model in each material block, raise an exception.
-    TEUCHOS_TEST_FOR_EXCEPT_MSG((analysisHasMultiphysics && (materialName.find("Two Phase Multiphysics") == std::string::npos)), "\n**** Error, material model is not two phase multiphysics compatible.\n");
+    TEUCHOS_TEST_FOR_EXCEPT_MSG((twoPhasePoroelasticity && (materialName.find("Two Phase Multiphysics") == std::string::npos)), "\n**** Error, material model is not two phase multiphysics compatible.\n");
+    TEUCHOS_TEST_FOR_EXCEPT_MSG((onePhasePoroelasticity && (materialName.find("One Phase Multiphysics") == std::string::npos)), "\n**** Error, material model is not one phase multiphysics compatible.\n");
 
     Teuchos::ParameterList matParams = materialParams.sublist(materialName);
 
@@ -462,7 +501,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   auxiliaryFieldIds.push_back(externalForceDensityFieldId);
   if(analysisHasContact)
     auxiliaryFieldIds.push_back(contactForceDensityFieldId);
-  if(analysisHasMultiphysics) {
+  if(twoPhasePoroelasticity) {
     auxiliaryFieldIds.push_back(porePressureYFieldId);
     auxiliaryFieldIds.push_back(porePressureUFieldId);
     auxiliaryFieldIds.push_back(porePressureVFieldId);
@@ -485,6 +524,18 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     auxiliaryFieldIds.push_back(phaseOneFracExternalFlowDensityFieldId);
     auxiliaryFieldIds.push_back(phaseTwoFracExternalFlowDensityFieldId);
     auxiliaryFieldIds.push_back(phaseTwoPoreExternalFlowDensityFieldId);
+  }
+  else if(onePhasePoroelasticity){
+    auxiliaryFieldIds.push_back(porePressureYFieldId);
+    auxiliaryFieldIds.push_back(porePressureUFieldId);
+    auxiliaryFieldIds.push_back(porePressureVFieldId);
+
+    auxiliaryFieldIds.push_back(fracturePressureVFieldId);
+    auxiliaryFieldIds.push_back(fracturePressureUFieldId);
+    auxiliaryFieldIds.push_back(fracturePressureVFieldId);
+
+    auxiliaryFieldIds.push_back(phaseOnePoreExternalFlowDensityFieldId);
+    auxiliaryFieldIds.push_back(phaseOneFracExternalFlowDensityFieldId);
   }
   if(computeIntersections){
     int tempFieldId;
@@ -539,7 +590,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     blockIt->importData(*(peridigmDiscretization->getInitialX()),   coordinatesFieldId,      PeridigmField::STEP_NP1,  Insert);
     blockIt->importData(elementIds,                                 elementIdFieldId,        PeridigmField::STEP_NONE, Insert);
 
-    if(analysisHasMultiphysics){
+    if(twoPhasePoroelasticity){
       scratchOneD->PutScalar(0.0);
       blockIt->importData(*scratchOneD, porePressureYFieldId, PeridigmField::STEP_N, Insert);
       blockIt->importData(*scratchOneD, porePressureYFieldId, PeridigmField::STEP_NP1, Insert);
@@ -549,6 +600,13 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
       blockIt->importData(*scratchOneD, phaseOneSaturationPoresYFieldId, PeridigmField::STEP_NP1, Insert);
       blockIt->importData(*scratchOneD, phaseOneSaturationFracYFieldId, PeridigmField::STEP_N, Insert);
       blockIt->importData(*scratchOneD, phaseOneSaturationFracYFieldId, PeridigmField::STEP_NP1, Insert);
+    }
+    else if(onePhasePoroelasticity){
+      scratchOneD->PutScalar(0.0);
+      blockIt->importData(*scratchOneD, porePressureYFieldId, PeridigmField::STEP_N, Insert);
+      blockIt->importData(*scratchOneD, porePressureYFieldId, PeridigmField::STEP_NP1, Insert);
+      blockIt->importData(*scratchOneD, fracturePressureYFieldId, PeridigmField::STEP_N, Insert);
+      blockIt->importData(*scratchOneD, fracturePressureYFieldId, PeridigmField::STEP_NP1, Insert);
     }
   }
 
@@ -796,8 +854,7 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
   // includes ghosts
   oneDimensionalOverlapMap = peridigmDisc->getGlobalOverlapMap(1);
 
-  if(analysisHasMultiphysics){
-
+  if(twoPhasePoroelasticity){
     nDimensionalMap = Teuchos::rcp(new Epetra_BlockMap(-1,
               oneDimensionalMap->NumMyElements(),
               oneDimensionalMap->MyGlobalElements(),
@@ -806,6 +863,14 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
               oneDimensionalMap->Comm()));
 
     //nDimensionalMap = peridigmDisc->getGlobalOwnedMap(7);
+  }
+  else if(onePhasePoroelasticity){
+    nDimensionalMap = Teuchos::rcp(new Epetra_BlockMap(-1,
+              oneDimensionalMap->NumMyElements(),
+              oneDimensionalMap->MyGlobalElements(),
+              5, // 3 solid dimensions + 2 fluids dofs
+              0,
+              oneDimensionalMap->Comm()));
   }
 
   // threeDimensionalMap
@@ -821,7 +886,7 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
   // \todo Do not allocate space for deltaTemperature if not needed.
   // There is no need to modify this other stuff, because we need it for
   // proper output anyway.
-  if(analysisHasMultiphysics)
+  if(twoPhasePoroelasticity)
   {
     oneDimensionalMothership = Teuchos::rcp(new Epetra_MultiVector(*oneDimensionalMap, 30));
     blockIDs = Teuchos::rcp((*oneDimensionalMothership)(0), false);         // block ID
@@ -855,6 +920,27 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
     externalPhaseTwoFracFlow = Teuchos::rcp((*oneDimensionalMothership)(28), false);
     scratchOneD = Teuchos::rcp((*oneDimensionalMothership)(29), false);       // one dimensional scratch vector useful for gather operations
   }
+  else if(onePhasePoroelasticity){
+    oneDimensionalMothership = Teuchos::rcp(new Epetra_MultiVector(*oneDimensionalMap, 18));
+    blockIDs = Teuchos::rcp((*oneDimensionalMothership)(0), false);         // block ID
+    horizon = Teuchos::rcp((*oneDimensionalMothership)(1), false);          // horizon for each point
+    volume = Teuchos::rcp((*oneDimensionalMothership)(2), false);           // cell volume
+    density = Teuchos::rcp((*oneDimensionalMothership)(3), false);          // solid density
+    deltaTemperature = Teuchos::rcp((*oneDimensionalMothership)(4), false); // change in temperature
+    porePressureU = Teuchos::rcp((*oneDimensionalMothership)(5), false);
+    porePressureY = Teuchos::rcp((*oneDimensionalMothership)(6), false);
+    porePressureV = Teuchos::rcp((*oneDimensionalMothership)(7), false);
+    porePressureDeltaU = Teuchos::rcp((*oneDimensionalMothership)(8), false);
+    fracturePressureU = Teuchos::rcp((*oneDimensionalMothership)(9), false);
+    fracturePressureY = Teuchos::rcp((*oneDimensionalMothership)(10), false);
+    fracturePressureV = Teuchos::rcp((*oneDimensionalMothership)(11), false);
+    fracturePressureDeltaU = Teuchos::rcp((*oneDimensionalMothership)(12), false);
+    phaseOnePoreFlow = Teuchos::rcp((*oneDimensionalMothership)(13), false);
+    externalPhaseOnePoreFlow = Teuchos::rcp((*oneDimensionalMothership)(14), false);
+    phaseOneFracFlow = Teuchos::rcp((*oneDimensionalMothership)(15), false);
+    externalPhaseOneFracFlow = Teuchos::rcp((*oneDimensionalMothership)(16), false);
+    scratchOneD = Teuchos::rcp((*oneDimensionalMothership)(17), false);       // one dimensional scratch vector useful for gather operations
+  }
   else {
     oneDimensionalMothership = Teuchos::rcp(new Epetra_MultiVector(*oneDimensionalMap, 5));
     blockIDs = Teuchos::rcp((*oneDimensionalMothership)(0), false);         // block ID
@@ -864,9 +950,9 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
     deltaTemperature = Teuchos::rcp((*oneDimensionalMothership)(4), false); // change in temperature
   }
 
-  if(analysisHasMultiphysics){
-      nDimensionalMothership = Teuchos::rcp(new Epetra_MultiVector(*nDimensionalMap, 1));
-      combinedForce = Teuchos::rcp((*nDimensionalMothership)(0), false);         // abstract force
+  if(twoPhasePoroelasticity or onePhasePoroelasticity){
+    nDimensionalMothership = Teuchos::rcp(new Epetra_MultiVector(*nDimensionalMap, 1));
+    combinedForce = Teuchos::rcp((*nDimensionalMothership)(0), false);         // abstract force
   }
 
   // \todo Do not allocate space for the contact force nor deltaU if not needed.
@@ -1245,7 +1331,8 @@ void PeridigmNS::Peridigm::execute(Teuchos::RCP<Teuchos::ParameterList> solverPa
 
   TEUCHOS_TEST_FOR_EXCEPT_MSG(solverParams.is_null(), "Error in Peridigm::execute, solverParams is null.\n");
 
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(analysisHasMultiphysics && !(solverParams->isSublist("NOXQuasiStatic")), "Error in Peridigm::execute, only NOXQuasiStatic supported for Two Phase Multiphysics.\n");
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(twoPhasePoroelasticity && !(solverParams->isSublist("NOXQuasiStatic")), "Error in Peridigm::execute, only NOXQuasiStatic supported for Two Phase Multiphysics.\n");
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(onePhasePoroelasticity && !(solverParams->isSublist("NOXQuasiStatic")), "Error in Peridigm::execute, only NOXQuasiStatic supported for One Phase Multiphysics.\n");
 
 
   // allowable explicit time integration schemes:  Verlet
@@ -1624,7 +1711,7 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
 
   // Multiphysics: copy the solution vector passed in by NOX to update the deformation
 	//TODO rewrite to take advantage of indirect addressing of soln vector
-  if(analysisHasMultiphysics){
+  if(twoPhasePoroelasticity){
     for(int i=0 ; i < soln->MyLength() ; i+=7){
       const int threeDI = (3*i)/7;
       const int oneDI = i/7;
@@ -1647,6 +1734,25 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
     phaseOneSaturationPoresV->Update(1.0, *noxPhaseOneSaturationPoresVAtDOFWithKinematicBC, 1.0);
     phaseOneSaturationFracV->Update(1.0, *noxPhaseOneSaturationFracVAtDOFWithKinematicBC, 1.0);
   }
+  else if(onePhasePoroelasticity){
+    for(int i=0 ; i < soln->MyLength() ; i+=5){
+      const int threeDI = (3*i)/5;
+      const int oneDI = i/5;
+      (*y)[threeDI + 0] = (*u)[threeDI + 0] + (*x)[threeDI + 0] + (*soln)[i + 0];
+      (*v)[threeDI + 0] = (*soln)[i + 0] / (workset->timeStep);
+      (*y)[threeDI + 1] = (*u)[threeDI + 1] + (*x)[threeDI + 1] + (*soln)[i + 1];
+      (*v)[threeDI + 1] = (*soln)[i + 1] / (workset->timeStep);
+      (*y)[threeDI + 2] = (*u)[threeDI + 2] + (*x)[threeDI + 2] + (*soln)[i + 2];
+      (*v)[threeDI + 2] = (*soln)[i + 2] / (workset->timeStep);
+      (*porePressureY)[oneDI] = (*porePressureU)[oneDI] + (*soln)[i+3];
+      (*porePressureV)[oneDI] = (*soln)[i+3] / (workset->timeStep);
+      (*fracturePressureY)[oneDI] = (*fracturePressureU)[oneDI] + (*soln)[i+4];
+      (*fracturePressureV)[oneDI] = (*soln)[i+4] / (workset->timeStep);
+    }
+    //Necessary because soln is zero at dof with kinematic bc
+    porePressureV->Update(1.0, *noxPorePressureVAtDOFWithKinematicBC, 1.0);
+    fracturePressureV->Update(1.0, *noxFracPressureVAtDOFWithKinematicBC, 1.0);
+  }
   else{
     // copy the solution vector passed in by NOX to update the deformation
     for(int i=0 ; i < u->MyLength() ; ++i){
@@ -1667,7 +1773,7 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
     blockIt->importData(*deltaTemperature, deltaTemperatureFieldId, PeridigmField::STEP_NP1, Insert);
   }
 
-  if(analysisHasMultiphysics){
+  if(twoPhasePoroelasticity){
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
       blockIt->importData(*porePressureU, porePressureUFieldId, PeridigmField::STEP_NP1, Insert);
       blockIt->importData(*porePressureY, porePressureYFieldId, PeridigmField::STEP_NP1, Insert);
@@ -1681,6 +1787,16 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
       blockIt->importData(*phaseOneSaturationFracU, phaseOneSaturationFracUFieldId, PeridigmField::STEP_NP1, Insert);
       blockIt->importData(*phaseOneSaturationFracY, phaseOneSaturationFracYFieldId, PeridigmField::STEP_NP1, Insert);
       blockIt->importData(*phaseOneSaturationFracV, phaseOneSaturationFracVFieldId, PeridigmField::STEP_NP1, Insert);
+    }
+  }
+  else if(onePhasePoroelasticity){
+    for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+      blockIt->importData(*porePressureU, porePressureUFieldId, PeridigmField::STEP_NP1, Insert);
+      blockIt->importData(*porePressureY, porePressureYFieldId, PeridigmField::STEP_NP1, Insert);
+      blockIt->importData(*porePressureV, porePressureVFieldId, PeridigmField::STEP_NP1, Insert);
+      blockIt->importData(*fracturePressureU, fracturePressureUFieldId, PeridigmField::STEP_NP1, Insert);
+      blockIt->importData(*fracturePressureY, fracturePressureYFieldId, PeridigmField::STEP_NP1, Insert);
+      blockIt->importData(*fracturePressureV, fracturePressureVFieldId, PeridigmField::STEP_NP1, Insert);
     }
   }
   PeridigmNS::Timer::self().stopTimer("Gather/Scatter");
@@ -1699,7 +1815,7 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
       force->Update(1.0, *scratch, 1.0);
     }
 
-    if(analysisHasMultiphysics){
+    if(twoPhasePoroelasticity){
       combinedForce->PutScalar(0.0);
       phaseOnePoreFlow->PutScalar(0.0);
       phaseOneFracFlow->PutScalar(0.0);
@@ -1736,6 +1852,31 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
       }
       scratchOneD->PutScalar(0.0);
     }
+    else if(onePhasePoroelasticity){
+      combinedForce->PutScalar(0.0);
+      phaseOnePoreFlow->PutScalar(0.0);
+      phaseOneFracFlow->PutScalar(0.0);
+
+      for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+        scratchOneD->PutScalar(0.0);
+        blockIt->exportData(*scratchOneD, phaseOnePoreFlowDensityFieldId, PeridigmField::STEP_NP1, Add);
+        phaseOnePoreFlow->Update(1.0, *scratchOneD, 1.0);
+
+        scratchOneD->PutScalar(0.0);
+        blockIt->exportData(*scratchOneD, phaseOneFracFlowDensityFieldId, PeridigmField::STEP_NP1, Add);
+        phaseOneFracFlow->Update(1.0, *scratchOneD, 1.0);
+      }
+
+      for(int i=0 ; i < force->MyLength() ; i+=3){
+        const int fiveDI = (5*i)/3;
+        (*combinedForce)[fiveDI + 0] = (*force)[i + 0];
+        (*combinedForce)[fiveDI + 1] = (*force)[i + 1];
+        (*combinedForce)[fiveDI + 2] = (*force)[i + 2];
+        (*combinedForce)[fiveDI + 3] = (*phaseOnePoreFlow)[i/3];
+        (*combinedForce)[fiveDI + 4] = (*phaseOneFracFlow)[i/3];
+      }
+      scratchOneD->PutScalar(0.0);
+    }
     scratch->PutScalar(0.0);
     PeridigmNS::Timer::self().stopTimer("Gather/Scatter");
 
@@ -1744,14 +1885,14 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
 
     // copy the internal force to the residual vector
     // note that due to restrictions on CrsMatrix, these vectors have different (but equivalent) maps
-    if(not analysisHasMultiphysics){
-        TEUCHOS_TEST_FOR_EXCEPT_MSG(residual->MyLength() != force->MyLength(), "**** PeridigmNS::Peridigm::evaluateNOX() incompatible vector lengths!\n");
+    if(not twoPhasePoroelasticity){
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(residual->MyLength() != force->MyLength(), "**** PeridigmNS::Peridigm::evaluateNOX() incompatible vector lengths!\n");
     }
     else{
-        TEUCHOS_TEST_FOR_EXCEPT_MSG(residual->MyLength() != combinedForce->MyLength(), "**** PeridigmNS::Peridigm::evaluateNOX() incompatible vector lengths! (residual with combinedForce)\n");
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(residual->MyLength() != combinedForce->MyLength(), "**** PeridigmNS::Peridigm::evaluateNOX() incompatible vector lengths! (residual with combinedForce)\n");
     }
 
-    if(analysisHasMultiphysics){
+    if(twoPhasePoroelasticity){
       //Store abstract force density immediately converted to force
       for(int i=0 ; i < combinedForce->MyLength() ; i+=7){
         (*residual)[i+0] = ((*externalForce)[i*3/7+0] + (*combinedForce)[i+0])*(*volume)[i/7]/1000000.0;
@@ -1761,6 +1902,16 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
         (*residual)[i+4] = ((*externalPhaseOneFracFlow)[i/7] + (*combinedForce)[i+4])*(*volume)[i/7]*1000000.0;
         (*residual)[i+5] = ((*externalPhaseTwoPoreFlow)[i/7] + (*combinedForce)[i+5])*(*volume)[i/7]*1000000.0;
         (*residual)[i+6] = ((*externalPhaseTwoFracFlow)[i/7] + (*combinedForce)[i+6])*(*volume)[i/7]*1000000.0;
+      }
+    }
+    else if(onePhasePoroelasticity){
+      //Store abstract force density immediately converted to force
+      for(int i=0 ; i < combinedForce->MyLength() ; i+=5){
+        (*residual)[i+0] = ((*externalForce)[i*3/5+0] + (*combinedForce)[i+0])*(*volume)[i/5];
+        (*residual)[i+1] = ((*externalForce)[i*3/5+1] + (*combinedForce)[i+1])*(*volume)[i/5];
+        (*residual)[i+2] = ((*externalForce)[i*3/5+2] + (*combinedForce)[i+2])*(*volume)[i/5];
+        (*residual)[i+3] = ((*externalPhaseOnePoreFlow)[i/5] + (*combinedForce)[i+3])*(*volume)[i/5];
+        (*residual)[i+4] = ((*externalPhaseOneFracFlow)[i/5] + (*combinedForce)[i+4])*(*volume)[i/5];
       }
     }
     else{
@@ -1799,7 +1950,8 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
 void PeridigmNS::Peridigm::computeInternalForce()
 {
 
-   TEUCHOS_TEST_FOR_EXCEPT_MSG(analysisHasMultiphysics, "**** PeridigmNS::Peridigm::computeInternalForce() is not multiphysics compatible.\n");
+   TEUCHOS_TEST_FOR_EXCEPT_MSG((twoPhasePoroelasticity or onePhasePoroelasticity), "**** PeridigmNS::Peridigm::computeInternalForce() is not multiphysics compatible.\n");
+
   // This function is intended for use when Peridigm is called as an external library (e.g., code coupling)
   // It is assumed that the global vectors x, u, y, and v have already been set by the driver application
 
@@ -1921,7 +2073,7 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
   Teuchos::RCP<Epetra_Vector> residual = Teuchos::rcp(new Epetra_Vector(tangent->Map()));
   Teuchos::RCP<Epetra_Vector> reaction;
 
-  if(analysisHasMultiphysics)
+  if(twoPhasePoroelasticity or onePhasePoroelasticity)
     reaction = Teuchos::rcp(new Epetra_Vector(combinedForce->Map()));
   else
     reaction = Teuchos::rcp(new Epetra_Vector(force->Map()));
@@ -1937,20 +2089,28 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
   initialGuess->PutScalar(0.0);
 
   noxVelocityAtDOFWithKinematicBC = Teuchos::rcp(new Epetra_Vector(v->Map()));
-  if(analysisHasMultiphysics){
+  if(twoPhasePoroelasticity){
     noxPorePressureVAtDOFWithKinematicBC = Teuchos::rcp(new Epetra_Vector(porePressureV->Map()));
     noxFracPressureVAtDOFWithKinematicBC = Teuchos::rcp(new Epetra_Vector(fracturePressureV->Map()));
     noxPhaseOneSaturationPoresVAtDOFWithKinematicBC = Teuchos::rcp(new Epetra_Vector(phaseOneSaturationPoresV->Map()));
     noxPhaseOneSaturationFracVAtDOFWithKinematicBC = Teuchos::rcp(new Epetra_Vector(phaseOneSaturationFracV->Map()));
   }
+  else if(onePhasePoroelasticity){
+    noxPorePressureVAtDOFWithKinematicBC = Teuchos::rcp(new Epetra_Vector(porePressureV->Map()));
+    noxFracPressureVAtDOFWithKinematicBC = Teuchos::rcp(new Epetra_Vector(fracturePressureV->Map()));
+  }
 
   // Initialize velocity to zero
   v->PutScalar(0.0);
-  if(analysisHasMultiphysics){
+  if(twoPhasePoroelasticity){
     porePressureV->PutScalar(0.0);
     fracturePressureV->PutScalar(0.0);
     phaseOneSaturationPoresV->PutScalar(0.0);
     phaseOneSaturationFracV->PutScalar(0.0);
+  }
+  else if(onePhasePoroelasticity){
+    porePressureV->PutScalar(0.0);
+    fracturePressureV->PutScalar(0.0);
   }
 
   // Pointers into mothership vectors
@@ -1965,7 +2125,7 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
   y->ExtractView( &yPtr );
   v->ExtractView( &vPtr );
   deltaU->ExtractView( &deltaUPtr );
-  if(analysisHasMultiphysics){
+  if(twoPhasePoroelasticity){
     porePressureU->ExtractView( &porePressureUPtr );
     porePressureY->ExtractView( &porePressureYPtr );
     porePressureV->ExtractView( &porePressureVPtr );
@@ -1985,6 +2145,17 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
     phaseOneSaturationFracY->ExtractView( &phaseOneSaturationFracYPtr );
     phaseOneSaturationFracV->ExtractView( &phaseOneSaturationFracVPtr );
     phaseOneSaturationFracIncrement->ExtractView( &phaseOneSaturationFracIncrementPtr );
+  }
+  else if(onePhasePoroelasticity){
+    porePressureU->ExtractView( &porePressureUPtr );
+    porePressureY->ExtractView( &porePressureYPtr );
+    porePressureV->ExtractView( &porePressureVPtr );
+    porePressureDeltaU->ExtractView( &porePressureDeltaUPtr );
+
+    fracturePressureU->ExtractView( &fracturePressureUPtr );
+    fracturePressureY->ExtractView( &fracturePressureYPtr );
+    fracturePressureV->ExtractView( &fracturePressureVPtr );
+    fracturePressureDeltaU->ExtractView( &fracturePressureDeltaUPtr );
   }
 
   bool performJacobianDiagnostics = solverParams->get("Jacobian Diagnostics", false);
@@ -2080,7 +2251,7 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
     deltaU->PutScalar(0.0);
 
     // soln is already appropriately sized for multiphysics
-    if(analysisHasMultiphysics){
+    if(twoPhasePoroelasticity){
       porePressureDeltaU->PutScalar(0.0);
       fracturePressureDeltaU->PutScalar(0.0);
       phaseOneSaturationPoresIncrement->PutScalar(0.0);
@@ -2096,6 +2267,19 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
       fracturePressureV->PutScalar(0.0);
       phaseOneSaturationPoresV->PutScalar(0.0);
       phaseOneSaturationFracV->PutScalar(0.0);
+    }
+    else if(onePhasePoroelasticity){
+      porePressureDeltaU->PutScalar(0.0);
+      fracturePressureDeltaU->PutScalar(0.0);
+      for(int i=0 ; i<initialGuess->MyLength() ; i+=5){
+        (*initialGuess)[i + 0] = (*v)[(3*i)/5+0]*timeIncrement;
+        (*initialGuess)[i + 1] = (*v)[(3*i)/5+1]*timeIncrement;
+        (*initialGuess)[i + 2] = (*v)[(3*i)/5+2]*timeIncrement;
+        (*initialGuess)[i + 3] = (*porePressureV)[i/5]*timeIncrement;
+        (*initialGuess)[i + 4] = (*fracturePressureV)[i/5]*timeIncrement;
+      }
+      porePressureV->PutScalar(0.0);
+      fracturePressureV->PutScalar(0.0);
     }
     else{
         // Use a predictor based on the velocity from the previous load step
@@ -2120,7 +2304,7 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
       uPtr[i] += deltaUPtr[i];
     }
 
-    if(analysisHasMultiphysics){
+    if(twoPhasePoroelasticity){
       for(int i=0 ; i<porePressureU->MyLength() ; ++i){
         porePressureUPtr[i] += porePressureDeltaUPtr[i];
         fracturePressureUPtr[i] += fracturePressureDeltaUPtr[i];
@@ -2128,25 +2312,39 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
         phaseOneSaturationFracUPtr[i] += phaseOneSaturationFracIncrementPtr[i];
       }
     }
+    else if(onePhasePoroelasticity){
+      for(int i=0 ; i<porePressureU->MyLength() ; ++i){
+        porePressureUPtr[i] += porePressureDeltaUPtr[i];
+        fracturePressureUPtr[i] += fracturePressureDeltaUPtr[i];
+      }
+    }
 
     // Note:  applyBoundaryConditions() sets the velocity as well as the displacement.
     //        This needs to be stored because NOX returns a deltaU of zero for these dof
     *noxVelocityAtDOFWithKinematicBC = *v;
 
-    if(analysisHasMultiphysics){
+    if(twoPhasePoroelasticity){
       *noxPorePressureVAtDOFWithKinematicBC = *porePressureV;
       *noxFracPressureVAtDOFWithKinematicBC = *fracturePressureV;
       *noxPhaseOneSaturationPoresVAtDOFWithKinematicBC = *phaseOneSaturationPoresV;
       *noxPhaseOneSaturationFracVAtDOFWithKinematicBC = *phaseOneSaturationFracV;
     }
+    else if(onePhasePoroelasticity){
+      *noxPorePressureVAtDOFWithKinematicBC = *porePressureV;
+      *noxFracPressureVAtDOFWithKinematicBC = *fracturePressureV;
+    }
     // evaluate the external (body) forces:
     PeridigmNS::Timer::self().startTimer("Apply Body Forces");
     boundaryAndInitialConditionManager->applyForceContributions(timeCurrent, timePrevious);
-    if(analysisHasMultiphysics){
+    if(twoPhasePoroelasticity){
       boundaryAndInitialConditionManager->applyPhaseOnePoreFlowContributions(timeCurrent, timePrevious);
       boundaryAndInitialConditionManager->applyPhaseOneFracFlowContributions(timeCurrent, timePrevious);
       boundaryAndInitialConditionManager->applyPhaseTwoPoreFlowContributions(timeCurrent, timePrevious);
       boundaryAndInitialConditionManager->applyPhaseTwoFracFlowContributions(timeCurrent, timePrevious);
+    }
+    else if(onePhasePoroelasticity){
+      boundaryAndInitialConditionManager->applyPhaseOnePoreFlowContributions(timeCurrent, timePrevious);
+      boundaryAndInitialConditionManager->applyPhaseOneFracFlowContributions(timeCurrent, timePrevious);
     }
     PeridigmNS::Timer::self().stopTimer("Apply Body Forces");
 
@@ -2157,7 +2355,7 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
       // compute the vector of reactions, i.e., the forces corresponding to degrees of freedom for which kinematic B.C. are applied
       for(int i=0 ; i<y->MyLength() ; ++i) yPtr[i] = xPtr[i] + uPtr[i];
 
-      if(analysisHasMultiphysics){
+      if(twoPhasePoroelasticity){
         for(int i=0 ; i<porePressureY->MyLength() ; ++i){
           porePressureYPtr[i] = porePressureUPtr[i];
           fracturePressureYPtr[i] = fracturePressureUPtr[i];
@@ -2165,16 +2363,24 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
           phaseOneSaturationFracYPtr[i] = phaseOneSaturationFracUPtr[i];
         }
       }
+      else if(onePhasePoroelasticity){
+        for(int i=0 ; i<porePressureY->MyLength() ; ++i){
+          porePressureYPtr[i] = porePressureUPtr[i];
+          fracturePressureYPtr[i] = fracturePressureUPtr[i];
+        }
+      }
 
       computeQuasiStaticResidual(residual);
 
-      if(analysisHasMultiphysics)
+      if(twoPhasePoroelasticity)
         boundaryAndInitialConditionManager->applyKinematicBC_ComputeReactions(combinedForce, reaction, 4 /*num multiphysDoFs*/);
+      else if(onePhasePoroelasticity)
+        boundaryAndInitialConditionManager->applyKinematicBC_ComputeReactions(combinedForce, reaction, 2 /*num multiphysDoFs*/);
       else
         boundaryAndInitialConditionManager->applyKinematicBC_ComputeReactions(force, reaction, 0);
 
       // convert force density to force
-      if(analysisHasMultiphysics){
+      if(twoPhasePoroelasticity){
         for(int i=0 ; i<reaction->MyLength() ; i+=7){
           (*reaction)[i+0] *= (*volume)[i/7]/1000000.0; //7 = 3 solids dofs + 4 fluids dofs
           (*reaction)[i+1] *= (*volume)[i/7]/1000000.0; //7 = 3 solids dofs + 4 fluids dofs
@@ -2183,6 +2389,15 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
           (*reaction)[i+4] *= (*volume)[i/7]*1000000.0; //7 = 3 solids dofs + 4 fluids dofs
           (*reaction)[i+5] *= (*volume)[i/7]*1000000.0; //7 = 3 solids dofs + 4 fluids dofs
           (*reaction)[i+6] *= (*volume)[i/7]*1000000.0; //7 = 3 solids dofs + 4 fluids dofs
+        }
+      }
+      else if(onePhasePoroelasticity){
+        for(int i=0 ; i<reaction->MyLength() ; i+=5){
+          (*reaction)[i+0] *= (*volume)[i/7]/1000000.0; //5 = 3 solids dofs + 2 fluids dofs
+          (*reaction)[i+1] *= (*volume)[i/7]/1000000.0; //5 = 3 solids dofs + 2 fluids dofs
+          (*reaction)[i+2] *= (*volume)[i/7]/1000000.0; //5 = 3 solids dofs + 2 fluids dofs
+          (*reaction)[i+3] *= (*volume)[i/7]*1000000.0; //5 = 3 solids dofs + 2 fluids dofs
+          (*reaction)[i+4] *= (*volume)[i/7]*1000000.0; //5 = 3 solids dofs + 2 fluids dofs
         }
       }
       else{
@@ -2353,7 +2568,7 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
       cout << setprecision(2) << "  cpu time for load step = " << CPUTime << " sec., cumulative cpu time = " << cumulativeLoadStepCPUTime << " sec.\n" << endl;
 
 
-    if(analysisHasMultiphysics){
+    if(twoPhasePoroelasticity){
     // Add the converged displacement increment to the displacement
     // Store the velocity
       for(int i=0 ; i<v->MyLength() ; i+=3){
@@ -2380,6 +2595,28 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
       fracturePressureV->Update(1.0, *noxFracPressureVAtDOFWithKinematicBC, 1.0);
       phaseOneSaturationPoresV->Update(1.0, *noxPhaseOneSaturationPoresVAtDOFWithKinematicBC, 1.0);
       phaseOneSaturationFracV->Update(1.0, *noxPhaseOneSaturationFracVAtDOFWithKinematicBC, 1.0);
+    }
+    else if(onePhasePoroelasticity){
+      // Add the converged displacement increment to the displacement
+      // Store the velocity
+        for(int i=0 ; i<v->MyLength() ; i+=3){
+          const int fiveDI = (5*i)/3;
+          const int oneDI = i/3;
+          (*v)[i + 0] = finalSolution[fiveDI + 0]/timeIncrement;
+          (*u)[i + 0] += finalSolution[fiveDI + 0];
+          (*v)[i + 1] = finalSolution[fiveDI + 1]/timeIncrement;
+          (*u)[i + 1] += finalSolution[fiveDI + 1];
+          (*v)[i + 2] = finalSolution[fiveDI + 2]/timeIncrement;
+          (*u)[i + 2] += finalSolution[fiveDI + 2];
+          (*porePressureV)[oneDI] = finalSolution[fiveDI + 3]/timeIncrement;
+          (*porePressureU)[oneDI] += finalSolution[fiveDI + 3];
+          (*fracturePressureV)[oneDI] = finalSolution[fiveDI + 4]/timeIncrement;
+          (*fracturePressureU)[oneDI] += finalSolution[fiveDI + 4];
+        }
+        //add nox velocity vectors to uncombined velocity vectors and store back in combined vector
+        v->Update(1.0, *noxVelocityAtDOFWithKinematicBC, 1.0);
+        porePressureV->Update(1.0, *noxPorePressureVAtDOFWithKinematicBC, 1.0);
+        fracturePressureV->Update(1.0, *noxFracPressureVAtDOFWithKinematicBC, 1.0);
     }
     else{
       // Add the converged displacement increment to the displacement
@@ -2849,11 +3086,15 @@ double PeridigmNS::Peridigm::quasiStaticsLineSearch(Teuchos::RCP<Epetra_Vector> 
   Teuchos::RCP<Epetra_Vector> tempVectorFracPressure;
   Teuchos::RCP<Epetra_Vector> tempVectorPhaseOneSaturationPores;
   Teuchos::RCP<Epetra_Vector> tempVectorPhaseOneSaturationFrac;
-  if(analysisHasMultiphysics){
+  if(twoPhasePoroelasticity){
     tempVectorPorePressure = Teuchos::rcp(new Epetra_Vector(*porePressureDeltaU));
     tempVectorFracPressure = Teuchos::rcp(new Epetra_Vector(*fracturePressureDeltaU));
     tempVectorPhaseOneSaturationPores = Teuchos::rcp(new Epetra_Vector(*phaseOneSaturationPoresIncrement));
     tempVectorPhaseOneSaturationFrac = Teuchos::rcp(new Epetra_Vector(*phaseOneSaturationFracIncrement));
+  }
+  else if(onePhasePoroelasticity){
+    tempVectorPorePressure = Teuchos::rcp(new Epetra_Vector(*porePressureDeltaU));
+    tempVectorFracPressure = Teuchos::rcp(new Epetra_Vector(*fracturePressureDeltaU));
   }
 
   tempVector = Teuchos::rcp(new Epetra_Vector(*deltaU));
@@ -2871,7 +3112,7 @@ double PeridigmNS::Peridigm::quasiStaticsLineSearch(Teuchos::RCP<Epetra_Vector> 
   deltaU->ExtractView( &deltaUPtr );
   lhs->ExtractView(&lhsPtr);
   residual->ExtractView(&residualPtr);
-  if(analysisHasMultiphysics){
+  if(twoPhasePoroelasticity){
     porePressureU->ExtractView( &porePressureUPtr );
     porePressureY->ExtractView( &porePressureYPtr );
     porePressureV->ExtractView( &porePressureVPtr );
@@ -2892,6 +3133,17 @@ double PeridigmNS::Peridigm::quasiStaticsLineSearch(Teuchos::RCP<Epetra_Vector> 
     phaseOneSaturationFracV->ExtractView( &phaseOneSaturationFracVPtr );
     phaseOneSaturationFracIncrement->ExtractView( &phaseOneSaturationFracIncrementPtr );
   }
+  else if(onePhasePoroelasticity){
+    porePressureU->ExtractView( &porePressureUPtr );
+    porePressureY->ExtractView( &porePressureYPtr );
+    porePressureV->ExtractView( &porePressureVPtr );
+    porePressureDeltaU->ExtractView( &porePressureDeltaUPtr );
+
+    fracturePressureU->ExtractView( &fracturePressureUPtr );
+    fracturePressureY->ExtractView( &fracturePressureYPtr );
+    fracturePressureV->ExtractView( &fracturePressureVPtr );
+    fracturePressureDeltaU->ExtractView( &fracturePressureDeltaUPtr );
+  }
 
   // compute the current residual
   double unperturbedResidualNorm = computeQuasiStaticResidual(residual);
@@ -2906,7 +3158,7 @@ double PeridigmNS::Peridigm::quasiStaticsLineSearch(Teuchos::RCP<Epetra_Vector> 
 
   // a systematic guess for alpha
   double epsilon = 1.0e-4;
-  if(analysisHasMultiphysics){
+  if(twoPhasePoroelasticity){
     for(int i=0 ; i<y->MyLength() ; i+=3){
       const int sevenDI = (7*i)/3;
       const int oneDI = i/3;
@@ -2932,6 +3184,27 @@ double PeridigmNS::Peridigm::quasiStaticsLineSearch(Teuchos::RCP<Epetra_Vector> 
       phaseOneSaturationFracVPtr[oneDI] = phaseOneSaturationFracIncrementPtr[oneDI]/dt;
     }
   }
+  else if(onePhasePoroelasticity){
+    for(int i=0 ; i<y->MyLength() ; i+=3){
+      const int fiveDI = (5*i)/3;
+      const int oneDI = i/3;
+      deltaUPtr[i + 0] += epsilon*lhsPtr[fiveDI+0];
+      yPtr[i + 0] = xPtr[i + j] + uPtr[i + 0] + deltaUPtr[i + 0];
+      vPtr[i + 0] = deltaUPtr[i + 0]/dt;
+      deltaUPtr[i + j] += epsilon*lhsPtr[fiveDI+j];
+      yPtr[i + 1] = xPtr[i + 1] + uPtr[i + 1] + deltaUPtr[i + 1];
+      vPtr[i + 1] = deltaUPtr[i + 1]/dt;
+      deltaUPtr[i + 2] += epsilon*lhsPtr[fiveDI+2];
+      yPtr[i + 2] = xPtr[i + 2] + uPtr[i + 2] + deltaUPtr[i + 2];
+      vPtr[i + 2] = deltaUPtr[i + 2]/dt;
+      porePressureDeltaUPtr[oneDI] += epsilon*lhsPtr[fiveDI+3];
+      porePressureYPtr[oneDI] = porePressureUPtr[oneDI] + porePressureDeltaUPtr[oneDI];
+      porePressureVPtr[oneDI] = porePressureDeltaUPtr[oneDI]/dt;
+      fracturePressureDeltaUPtr[oneDI] += epsilon*lhsPtr[fiveDI+4];
+      fracturePressureYPtr[oneDI] = fracturePressureUPtr[oneDI] + fracturePressureDeltaUPtr[oneDI];
+      fracturePressureVPtr[oneDI] = fracturePressureDeltaUPtr[oneDI]/dt;
+    }
+  }
   else{
    for(int i=0 ; i<y->MyLength() ; ++i){
      deltaUPtr[i] += epsilon*lhsPtr[i];
@@ -2948,11 +3221,15 @@ double PeridigmNS::Peridigm::quasiStaticsLineSearch(Teuchos::RCP<Epetra_Vector> 
   double tempAlpha = -1.0*epsilon*SR/(SPerturbedR - SR);
   if(tempAlpha > -0.1 && tempAlpha < 10.0)
     candidateAlphas.push_back(tempAlpha);
-  if(analysisHasMultiphysics){
+  if(twoPhasePoroelasticity){
     *porePressureDeltaU = *tempVectorPorePressure;
     *fracturePressureDeltaU = *tempVectorFracPressure;
     *phaseOneSaturationPoresIncrement = *tempVectorPhaseOneSaturationPores;
     *phaseOneSaturationFracIncrement = *tempVectorPhaseOneSaturationFrac;
+  }
+  else if(onePhasePoroelasticity){
+    *porePressureDeltaU = *tempVectorPorePressure;
+    *fracturePressureDeltaU = *tempVectorFracPressure;
   }
   *deltaU = *tempVector;
 
@@ -2968,7 +3245,7 @@ double PeridigmNS::Peridigm::quasiStaticsLineSearch(Teuchos::RCP<Epetra_Vector> 
   for(unsigned int i=0 ; i<candidateAlphas.size(); ++i){
     double alpha = candidateAlphas[i];
 
-  if(analysisHasMultiphysics){
+  if(twoPhasePoroelasticity){
     for(int i=0 ; i<y->MyLength() ; i+=3){
       const int sevenDI = (7*i)/3;
       const int oneDI = i/3;
@@ -2994,6 +3271,27 @@ double PeridigmNS::Peridigm::quasiStaticsLineSearch(Teuchos::RCP<Epetra_Vector> 
       phaseOneSaturationFracVPtr[oneDI] = phaseOneSaturationFracIncrementPtr[oneDI]/dt;
     }
   }
+  else if(onePhasePoroelasticity){
+    for(int i=0 ; i<y->MyLength() ; i+=3){
+      const int fiveDI = (5*i)/3;
+      const int oneDI = i/3;
+      deltaUPtr[i + 0] += alpha*lhsPtr[fiveDI+0];
+      yPtr[i + 0] = xPtr[i + 0] + uPtr[i + 0] + deltaUPtr[i + 0];
+      vPtr[i + 0] = deltaUPtr[i + 0]/dt;
+      deltaUPtr[i + 1] += alpha*lhsPtr[fiveDI+1];
+      yPtr[i + 1] = xPtr[i + 1] + uPtr[i + 1] + deltaUPtr[i + 1];
+      vPtr[i + 1] = deltaUPtr[i + 1]/dt;
+      deltaUPtr[i + 2] += alpha*lhsPtr[fiveDI+2];
+      yPtr[i + 2] = xPtr[i + 2] + uPtr[i + 2] + deltaUPtr[i + 2];
+      vPtr[i + 2] = deltaUPtr[i + 2]/dt;
+      porePressureDeltaUPtr[oneDI] += alpha*lhsPtr[fiveDI + 3];
+      porePressureYPtr[oneDI] = porePressureUPtr[oneDI] + porePressureDeltaUPtr[oneDI];
+      porePressureVPtr[oneDI] = porePressureDeltaUPtr[oneDI]/dt;
+      fracturePressureDeltaUPtr[oneDI] += alpha*lhsPtr[fiveDI + 4];
+      fracturePressureYPtr[oneDI] = fracturePressureUPtr[oneDI] + fracturePressureDeltaUPtr[oneDI];
+      fracturePressureVPtr[oneDI] = fracturePressureDeltaUPtr[oneDI]/dt;
+    }
+  }
   else{
     for(int i=0 ; i<y->MyLength() ; ++i){
       deltaUPtr[i] += alpha*lhsPtr[i];
@@ -3003,11 +3301,15 @@ double PeridigmNS::Peridigm::quasiStaticsLineSearch(Teuchos::RCP<Epetra_Vector> 
   }
 
     double residualNorm = computeQuasiStaticResidual(residual);
-    if(analysisHasMultiphysics){
+    if(twoPhasePoroelasticity){
       *porePressureDeltaU = *tempVectorPorePressure;
       *fracturePressureDeltaU = *tempVectorFracPressure;
       *phaseOneSaturationPoresIncrement = *tempVectorPhaseOneSaturationPores;
       *phaseOneSaturationFracIncrement = *tempVectorPhaseOneSaturationFrac;
+    }
+    else if(onePhasePoroelasticity){
+      *porePressureDeltaU = *tempVectorPorePressure;
+      *fracturePressureDeltaU = *tempVectorFracPressure;
     }
     *deltaU = *tempVector;
     if(boost::math::isfinite(residualNorm) && residualNorm < bestResidual){
@@ -3047,7 +3349,7 @@ double PeridigmNS::Peridigm::quasiStaticsLineSearch(Teuchos::RCP<Epetra_Vector> 
   // compute the residual for each candidate alpha
   for(unsigned int i=0 ; i<candidateAlphas.size(); ++i){
     double alpha = candidateAlphas[i];
-    if(analysisHasMultiphysics){
+    if(twoPhasePoroelasticity){
       for(int i=0 ; i<y->MyLength() ; i+=3){
         const int sevenDI = (7*i)/3;
         const int oneDI = i/3;
@@ -3073,6 +3375,27 @@ double PeridigmNS::Peridigm::quasiStaticsLineSearch(Teuchos::RCP<Epetra_Vector> 
         phaseOneSaturationFracVPtr[oneDI] = phaseOneSaturationFracIncrementPtr[oneDI]/dt;
       }
     }
+    else if(onePhasePoroelasticity){
+      for(int i=0 ; i<y->MyLength() ; i+=3){
+        const int fiveDI = (5*i)/3;
+        const int oneDI = i/3;
+        deltaUPtr[i + 0] += alpha*lhsPtr[fiveDI+0];
+        yPtr[i + 0] = xPtr[i + 0] + uPtr[i + 0] + deltaUPtr[i + 0];
+        vPtr[i + 0] = deltaUPtr[i + 0]/dt;
+        deltaUPtr[i + 1] += alpha*lhsPtr[fiveDI+1];
+        yPtr[i + 1] = xPtr[i + 1] + uPtr[i + 1] + deltaUPtr[i + 1];
+        vPtr[i + 1] = deltaUPtr[i + 1]/dt;
+        deltaUPtr[i + 2] += alpha*lhsPtr[fiveDI+2];
+        yPtr[i + 2] = xPtr[i + 2] + uPtr[i + 2] + deltaUPtr[i + 2];
+        vPtr[i + 2] = deltaUPtr[i + 2]/dt;
+        porePressureDeltaUPtr[oneDI] += alpha*lhsPtr[fiveDI+3];
+        porePressureYPtr[oneDI] = porePressureUPtr[oneDI] + porePressureDeltaUPtr[oneDI];
+        porePressureVPtr[oneDI] = porePressureDeltaUPtr[oneDI]/dt;
+        fracturePressureDeltaUPtr[oneDI] += alpha*lhsPtr[fiveDI+4];
+        fracturePressureYPtr[oneDI] = fracturePressureUPtr[oneDI] + fracturePressureDeltaUPtr[oneDI];
+        fracturePressureVPtr[oneDI] = fracturePressureDeltaUPtr[oneDI]/dt;
+      }
+    }
     else{
       for(int i=0 ; i<y->MyLength() ; ++i){
         deltaUPtr[i] += alpha*lhsPtr[i];
@@ -3082,11 +3405,15 @@ double PeridigmNS::Peridigm::quasiStaticsLineSearch(Teuchos::RCP<Epetra_Vector> 
     }
 
     double residualNorm = computeQuasiStaticResidual(residual);
-    if(analysisHasMultiphysics){
+    if(twoPhasePoroelasticity){
       *porePressureDeltaU = *tempVectorPorePressure;
       *fracturePressureDeltaU = *tempVectorFracPressure;
       *phaseOneSaturationPoresIncrement = *tempVectorPhaseOneSaturationPores;
       *phaseOneSaturationFracIncrement = *tempVectorPhaseOneSaturationFrac;
+    }
+    else if(onePhasePoroelasticity){
+      *porePressureDeltaU = *tempVectorPorePressure;
+      *fracturePressureDeltaU = *tempVectorFracPressure;
     }
     *deltaU = *tempVector;
     if(boost::math::isfinite(residualNorm)){
@@ -3540,7 +3867,7 @@ double PeridigmNS::Peridigm::computeQuasiStaticResidual(Teuchos::RCP<Epetra_Vect
     blockIt->importData(*deltaTemperature, deltaTemperatureFieldId, PeridigmField::STEP_NP1, Insert);
   }
 
-  if(analysisHasMultiphysics){
+  if(twoPhasePoroelasticity){
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
       blockIt->importData(*porePressureU, porePressureUFieldId, PeridigmField::STEP_NP1, Insert);
       blockIt->importData(*porePressureY, porePressureYFieldId, PeridigmField::STEP_NP1, Insert);
@@ -3557,6 +3884,17 @@ double PeridigmNS::Peridigm::computeQuasiStaticResidual(Teuchos::RCP<Epetra_Vect
       blockIt->importData(*phaseOneSaturationFracU, phaseOneSaturationFracUFieldId, PeridigmField::STEP_NP1, Insert);
       blockIt->importData(*phaseOneSaturationFracY, phaseOneSaturationFracYFieldId, PeridigmField::STEP_NP1, Insert);
       blockIt->importData(*phaseOneSaturationFracV, phaseOneSaturationFracVFieldId, PeridigmField::STEP_NP1, Insert);
+    }
+  }
+  else if(onePhasePoroelasticity){
+    for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+      blockIt->importData(*porePressureU, porePressureUFieldId, PeridigmField::STEP_NP1, Insert);
+      blockIt->importData(*porePressureY, porePressureYFieldId, PeridigmField::STEP_NP1, Insert);
+      blockIt->importData(*porePressureV, porePressureVFieldId, PeridigmField::STEP_NP1, Insert);
+
+      blockIt->importData(*fracturePressureU, fracturePressureUFieldId, PeridigmField::STEP_NP1, Insert);
+      blockIt->importData(*fracturePressureY, fracturePressureYFieldId, PeridigmField::STEP_NP1, Insert);
+      blockIt->importData(*fracturePressureV, fracturePressureVFieldId, PeridigmField::STEP_NP1, Insert);
     }
   }
   PeridigmNS::Timer::self().stopTimer("Gather/Scatter");
@@ -3576,7 +3914,7 @@ double PeridigmNS::Peridigm::computeQuasiStaticResidual(Teuchos::RCP<Epetra_Vect
     force->Update(1.0, *scratch, 1.0);
   }
 
-  if(analysisHasMultiphysics){
+  if(twoPhasePoroelasticity){
     combinedForce->PutScalar(0.0);
     phaseOnePoreFlow->PutScalar(0.0);
     phaseTwoPoreFlow->PutScalar(0.0);
@@ -3614,17 +3952,42 @@ double PeridigmNS::Peridigm::computeQuasiStaticResidual(Teuchos::RCP<Epetra_Vect
       (*combinedForce)[sevenDI+6] = (*phaseTwoFracFlow)[oneDI];
     }
   }
+  else if(onePhasePoroelasticity){
+    combinedForce->PutScalar(0.0);
+    phaseOnePoreFlow->PutScalar(0.0);
+    phaseOneFracFlow->PutScalar(0.0);
+
+    for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+      scratchOneD->PutScalar(0.0);
+      blockIt->exportData(*scratchOneD, phaseOnePoreFlowDensityFieldId, PeridigmField::STEP_NP1, Add);
+      phaseOnePoreFlow->Update(1.0, *scratchOneD, 1.0);
+
+      scratchOneD->PutScalar(0.0);
+      blockIt->exportData(*scratchOneD, phaseOneFracFlowDensityFieldId, PeridigmField::STEP_NP1, Add);
+      phaseOneFracFlow->Update(1.0, *scratchOneD, 1.0);
+    }
+
+    for(int i=0 ; i<force->MyLength() ; i+=3){
+      const int fiveDI = (5*i)/3;
+      const int oneDI = i/3;
+      (*combinedForce)[fiveDI + 0] = (*force)[i + 0];
+      (*combinedForce)[fiveDI + 1] = (*force)[i + 1];
+      (*combinedForce)[fiveDI + 2] = (*force)[i + 2];
+      (*combinedForce)[fiveDI + 3] = (*phaseOnePoreFlow)[oneDI]; //Pore to fracture flow contributions already have been included.
+      (*combinedForce)[fiveDI + 4] = (*phaseOneFracFlow)[oneDI];
+    }
+  }
 
   PeridigmNS::Timer::self().stopTimer("Gather/Scatter");
   scratch->PutScalar(0.0);
-  if(analysisHasMultiphysics)
+  if(twoPhasePoroelasticity or onePhasePoroelasticity)
     scratchOneD->PutScalar(0.0);
 
   // Check for NaNs in force evaluation
   // We'd like to know now because a NaN will likely cause a difficult-to-unravel crash downstream.
   for(int i=0 ; i<force->MyLength() ; ++i)
     TEUCHOS_TEST_FOR_EXCEPT_MSG(!boost::math::isfinite((*force)[i]), "**** NaN returned by force evaluation.\n");
-  if(analysisHasMultiphysics){
+  if(twoPhasePoroelasticity){
     for(int i=0 ; i<phaseOnePoreFlow->MyLength() ; ++i){
       TEUCHOS_TEST_FOR_EXCEPT_MSG(!boost::math::isfinite((*phaseOnePoreFlow)[i]), "**** NaN returned by phaseOnePoreFlow evaluation.\n");
       TEUCHOS_TEST_FOR_EXCEPT_MSG(!boost::math::isfinite((*phaseOneFracFlow)[i]), "**** NaN returned by phaseOneFracFlow evaluation.\n");
@@ -3639,12 +4002,22 @@ double PeridigmNS::Peridigm::computeQuasiStaticResidual(Teuchos::RCP<Epetra_Vect
     for(int i=0 ; i<combinedForce->MyLength() ; ++i)
       TEUCHOS_TEST_FOR_EXCEPT_MSG(!boost::math::isfinite((*combinedForce)[i]), "**** NaN returned by combinedForce evaluation.\n");
   }
+  else if(onePhasePoroelasticity){
+    for(int i=0 ; i<phaseOnePoreFlow->MyLength() ; ++i){
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(!boost::math::isfinite((*phaseOnePoreFlow)[i]), "**** NaN returned by phaseOnePoreFlow evaluation.\n");
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(!boost::math::isfinite((*phaseOneFracFlow)[i]), "**** NaN returned by phaseOneFracFlow evaluation.\n");
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(!boost::math::isfinite((*externalPhaseOnePoreFlow)[i]), "**** NaN returned by externalPhaseOnePoreFlow evaluation.\n");
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(!boost::math::isfinite((*externalPhaseOneFracFlow)[i]), "**** NaN returned by externalPhaseOneFracFlow evaluation.\n");
+    }
+    for(int i=0 ; i<combinedForce->MyLength() ; ++i)
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(!boost::math::isfinite((*combinedForce)[i]), "**** NaN returned by combinedForce evaluation.\n");
+  }
   for(int i=0 ; i<externalForce->MyLength() ; ++i)
     TEUCHOS_TEST_FOR_EXCEPT_MSG(!boost::math::isfinite((*externalForce)[i]), "**** NaN returned by external force evaluation.\n");
 
   // copy the internal force to the residual vector
   // note that due to restrictions on CrsMatrix, these vectors have different (but equivalent) maps
-  if(analysisHasMultiphysics){
+  if(twoPhasePoroelasticity or onePhasePoroelasticity){
     TEUCHOS_TEST_FOR_EXCEPT_MSG(residual->MyLength() != combinedForce->MyLength(), "**** PeridigmNS::Peridigm::computeQuasiStaticResidual() incompatible vector lengths!\n");
     for(int i=0 ; i<combinedForce->MyLength() ; ++i){
           (*residual)[i] = (*combinedForce)[i];
@@ -3656,7 +4029,7 @@ double PeridigmNS::Peridigm::computeQuasiStaticResidual(Teuchos::RCP<Epetra_Vect
           (*residual)[i] = (*force)[i];
   }
 
-  if(analysisHasMultiphysics){
+  if(twoPhasePoroelasticity){
     TEUCHOS_TEST_FOR_EXCEPT_MSG(residual->MyLength() != (7*externalForce->MyLength()/3), "**** PeridigmNS::Peridigm::computeQuasiStaticResidual() incompatible vector lengths!\n");
     TEUCHOS_TEST_FOR_EXCEPT_MSG(residual->MyLength() != (7*externalPhaseOneFracFlow->MyLength()), "**** PeridigmNS::Peridigm::computeQuasiStaticResidual() incompatible vector lengths!\n");
     TEUCHOS_TEST_FOR_EXCEPT_MSG(residual->MyLength() != (7*externalPhaseOnePoreFlow->MyLength()), "**** PeridigmNS::Peridigm::computeQuasiStaticResidual() incompatible vector lengths!\n");
@@ -3679,6 +4052,19 @@ double PeridigmNS::Peridigm::computeQuasiStaticResidual(Teuchos::RCP<Epetra_Vect
       (*residual)[i+4] *= (*volume)[i/7];
       (*residual)[i+5] *= (*volume)[i/7];
       (*residual)[i+6] *= (*volume)[i/7];
+    }
+  }
+  else if(onePhasePoroelasticity){
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(residual->MyLength() != (5*externalForce->MyLength()/3), "**** PeridigmNS::Peridigm::computeQuasiStaticResidual() incompatible vector lengths!\n");
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(residual->MyLength() != (5*externalPhaseOneFracFlow->MyLength()), "**** PeridigmNS::Peridigm::computeQuasiStaticResidual() incompatible vector lengths!\n");
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(residual->MyLength() != (5*externalPhaseOnePoreFlow->MyLength()), "**** PeridigmNS::Peridigm::computeQuasiStaticResidual() incompatible vector lengths!\n");
+
+    for(int i=0 ; i<residual->MyLength(); i+=5){
+      (*residual)[i+0] = ((*residual)[i+0] + (*externalForce)[3*i/5+0])*(volume)[i/5];
+      (*residual)[i+1] = ((*residual)[i+1] + (*externalForce)[3*i/5+1])*(volume)[i/5];
+      (*residual)[i+2] = ((*residual)[i+2] + (*externalForce)[3*i/5+2])*(volume)[i/5];
+      (*residual)[i+3] = ((*residual)[i+3] + (*externalPhaseOnePoreFlow)[i/5])*(volume)[i/5];
+      (*residual)[i+4] = ((*residual)[i+4] + (*externalPhaseOneFracFlow)[i/5])*(volume)[i/5];
     }
   }
   else{
@@ -3727,7 +4113,7 @@ void PeridigmNS::Peridigm::synchDataManagers() {
 
   PeridigmNS::Timer::self().startTimer("Gather/Scatter");
 
-  if(analysisHasMultiphysics){
+  if(twoPhasePoroelasticity){
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
       blockIt->importData(*porePressureU, porePressureUFieldId, PeridigmField::STEP_NP1, Insert);
       blockIt->importData(*porePressureY, porePressureYFieldId, PeridigmField::STEP_NP1, Insert);
@@ -3754,6 +4140,22 @@ void PeridigmNS::Peridigm::synchDataManagers() {
       blockIt->importData(*externalPhaseTwoPoreFlow, phaseTwoPoreExternalFlowDensityFieldId, PeridigmField::STEP_NP1, Insert);
       blockIt->importData(*phaseTwoFracFlow, phaseTwoFracFlowDensityFieldId, PeridigmField::STEP_NP1, Insert);
       blockIt->importData(*externalPhaseTwoFracFlow, phaseTwoFracExternalFlowDensityFieldId, PeridigmField::STEP_NP1, Insert);
+    }
+  }
+  else if(onePhasePoroelasticity){
+    for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+      blockIt->importData(*porePressureU, porePressureUFieldId, PeridigmField::STEP_NP1, Insert);
+      blockIt->importData(*porePressureY, porePressureYFieldId, PeridigmField::STEP_NP1, Insert);
+      blockIt->importData(*porePressureV, porePressureVFieldId, PeridigmField::STEP_NP1, Insert);
+
+      blockIt->importData(*fracturePressureU, fracturePressureUFieldId, PeridigmField::STEP_NP1, Insert);
+      blockIt->importData(*fracturePressureY, fracturePressureYFieldId, PeridigmField::STEP_NP1, Insert);
+      blockIt->importData(*fracturePressureV, fracturePressureVFieldId, PeridigmField::STEP_NP1, Insert);
+
+      blockIt->importData(*phaseOnePoreFlow, phaseOnePoreFlowDensityFieldId, PeridigmField::STEP_NP1, Insert);
+      blockIt->importData(*externalPhaseOnePoreFlow, phaseOnePoreExternalFlowDensityFieldId, PeridigmField::STEP_NP1, Insert);
+      blockIt->importData(*phaseOneFracFlow, phaseOneFracFlowDensityFieldId, PeridigmField::STEP_NP1, Insert);
+      blockIt->importData(*externalPhaseOneFracFlow, phaseOneFracExternalFlowDensityFieldId, PeridigmField::STEP_NP1, Insert);
     }
   }
 
@@ -3866,7 +4268,7 @@ void PeridigmNS::Peridigm::writeRestart(Teuchos::RCP<Teuchos::ParameterList> sol
   outputFile << "Current time is " << "\n" << currentTime  << "\n";
   outputFile.close();
   }
-  if(analysisHasMultiphysics){
+  if(twoPhasePoroelasticity or onePhasePoroelasticity){
 	 cout << "Restart for Multiphysics is not implemented yet." << endl;
 	 exit (0);
     }
@@ -3946,7 +4348,7 @@ void PeridigmNS::Peridigm::readRestart(){
   	cout <<"Reading restart. \n"<< endl;
   	cout.flush();
   }
-  if(analysisHasMultiphysics){
+  if(twoPhasePoroelasticity or onePhasePoroelasticity){
 	  if(peridigmComm->MyPID() == 0){
 		  TEUCHOS_TEST_FOR_EXCEPT_MSG(true,"Error: Restart for Multiphysics is not implemented yet.\n");
 		  MPI_Finalize();
