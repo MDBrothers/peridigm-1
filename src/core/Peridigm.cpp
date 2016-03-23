@@ -3189,9 +3189,9 @@ double PeridigmNS::Peridigm::quasiStaticsLineSearch(Teuchos::RCP<Epetra_Vector> 
       const int fiveDI = (5*i)/3;
       const int oneDI = i/3;
       deltaUPtr[i + 0] += epsilon*lhsPtr[fiveDI+0];
-      yPtr[i + 0] = xPtr[i + j] + uPtr[i + 0] + deltaUPtr[i + 0];
+      yPtr[i + 0] = xPtr[i + 0] + uPtr[i + 0] + deltaUPtr[i + 0];
       vPtr[i + 0] = deltaUPtr[i + 0]/dt;
-      deltaUPtr[i + j] += epsilon*lhsPtr[fiveDI+j];
+      deltaUPtr[i + 1] += epsilon*lhsPtr[fiveDI+1];
       yPtr[i + 1] = xPtr[i + 1] + uPtr[i + 1] + deltaUPtr[i + 1];
       vPtr[i + 1] = deltaUPtr[i + 1]/dt;
       deltaUPtr[i + 2] += epsilon*lhsPtr[fiveDI+2];
@@ -4060,11 +4060,11 @@ double PeridigmNS::Peridigm::computeQuasiStaticResidual(Teuchos::RCP<Epetra_Vect
     TEUCHOS_TEST_FOR_EXCEPT_MSG(residual->MyLength() != (5*externalPhaseOnePoreFlow->MyLength()), "**** PeridigmNS::Peridigm::computeQuasiStaticResidual() incompatible vector lengths!\n");
 
     for(int i=0 ; i<residual->MyLength(); i+=5){
-      (*residual)[i+0] = ((*residual)[i+0] + (*externalForce)[3*i/5+0])*(volume)[i/5];
-      (*residual)[i+1] = ((*residual)[i+1] + (*externalForce)[3*i/5+1])*(volume)[i/5];
-      (*residual)[i+2] = ((*residual)[i+2] + (*externalForce)[3*i/5+2])*(volume)[i/5];
-      (*residual)[i+3] = ((*residual)[i+3] + (*externalPhaseOnePoreFlow)[i/5])*(volume)[i/5];
-      (*residual)[i+4] = ((*residual)[i+4] + (*externalPhaseOneFracFlow)[i/5])*(volume)[i/5];
+      (*residual)[i+0] = ((*residual)[i+0] + (*externalForce)[3*i/5+0])*(*volume)[i/5];
+      (*residual)[i+1] = ((*residual)[i+1] + (*externalForce)[3*i/5+1])*(*volume)[i/5];
+      (*residual)[i+2] = ((*residual)[i+2] + (*externalForce)[3*i/5+2])*(*volume)[i/5];
+      (*residual)[i+3] = ((*residual)[i+3] + (*externalPhaseOnePoreFlow)[i/5])*(*volume)[i/5];
+      (*residual)[i+4] = ((*residual)[i+4] + (*externalPhaseOneFracFlow)[i/5])*(*volume)[i/5];
     }
   }
   else{
