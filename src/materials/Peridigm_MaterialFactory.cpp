@@ -79,6 +79,8 @@ PeridigmNS::MaterialFactory::create(const Teuchos::ParameterList& materialParams
   Teuchos::RCP<PeridigmNS::Material> materialModel;
   if (materialModelName == "Elastic")
     materialModel = Teuchos::rcp( new ElasticMaterial(materialParams) );
+  else if (materialModelName == "One Phase Multiphysics Elastic")
+    materialModel = Teuchos::rcp( new OnePhaseMultiphysicsElasticMaterial(materialParams) );
   else if (materialModelName == "Two Phase Multiphysics Elastic")
     materialModel = Teuchos::rcp( new TwoPhaseMultiphysicsElasticMaterial(materialParams) );
   else if (materialModelName == "Elastic Plastic")

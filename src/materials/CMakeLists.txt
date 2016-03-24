@@ -15,6 +15,7 @@ set(PD_MATERIAL_SOURCES
     viscoplastic_needleman_correspondence.cxx
     material_utilities.cxx
     two_phase_nonlocal_diffusion.cxx
+    one_phase_nonlocal_diffusion.cxx
     pals.cxx
 )
 
