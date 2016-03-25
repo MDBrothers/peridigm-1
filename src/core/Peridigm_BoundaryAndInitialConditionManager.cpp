@@ -677,7 +677,7 @@ void PeridigmNS::BoundaryAndInitialConditionManager::applyKinematicBC_InsertZero
           for(std::map<std::string,std::vector<int> > ::iterator setIt=itBegin;setIt!=itEnd;++setIt){
             vector<int> & nodeList = setIt->second;
             for(unsigned int i=0 ; i<nodeList.size() ; i++){
-                  int localNodeID = oneDimensionalMap.LID(7 * nodeList[i]);
+                  int localNodeID = oneDimensionalMap.LID((3 + numMultiphysDoFs) * nodeList[i]);
                   if(!vec.is_null() && localNodeID != -1)
                       (*vec)[localNodeID + coord] = 0.0;
             }
@@ -708,7 +708,7 @@ void PeridigmNS::BoundaryAndInitialConditionManager::applyKinematicBC_InsertZero
           for(std::map<std::string,std::vector<int> > ::iterator setIt=itBegin;setIt!=itEnd;++setIt){
             vector<int> & nodeList = setIt->second;
             for(unsigned int i=0 ; i<nodeList.size() ; i++){
-              int localNodeID = oneDimensionalMap.LID(7 * nodeList[i]);
+              int localNodeID = oneDimensionalMap.LID((3 + numMultiphysDoFs) * nodeList[i]);
               if(!vec.is_null() && localNodeID != -1) (*vec)[localNodeID+3] = 0.0;
             }
           }
@@ -738,7 +738,7 @@ void PeridigmNS::BoundaryAndInitialConditionManager::applyKinematicBC_InsertZero
           for(std::map<std::string,std::vector<int> > ::iterator setIt=itBegin;setIt!=itEnd;++setIt){
             vector<int> & nodeList = setIt->second;
             for(unsigned int i=0 ; i<nodeList.size() ; i++){
-              int localNodeID = oneDimensionalMap.LID(7 * nodeList[i]);
+              int localNodeID = oneDimensionalMap.LID((3 + numMultiphysDoFs) * nodeList[i]);
               if(!vec.is_null() && localNodeID != -1)  (*vec)[localNodeID+4] = 0.0;
             }
           }
@@ -768,7 +768,7 @@ void PeridigmNS::BoundaryAndInitialConditionManager::applyKinematicBC_InsertZero
           for(std::map<std::string,std::vector<int> > ::iterator setIt=itBegin;setIt!=itEnd;++setIt){
             vector<int> & nodeList = setIt->second;
             for(unsigned int i=0 ; i<nodeList.size() ; i++){
-              int localNodeID = oneDimensionalMap.LID(7 * nodeList[i]);
+              int localNodeID = oneDimensionalMap.LID((3 + numMultiphysDoFs) * nodeList[i]);
               if(!vec.is_null() && localNodeID != -1)  (*vec)[localNodeID+5] = 0.0;
             }
           }
@@ -798,7 +798,7 @@ void PeridigmNS::BoundaryAndInitialConditionManager::applyKinematicBC_InsertZero
           for(std::map<std::string,std::vector<int> > ::iterator setIt=itBegin;setIt!=itEnd;++setIt){
             vector<int> & nodeList = setIt->second;
             for(unsigned int i=0 ; i<nodeList.size() ; i++){
-              int localNodeID = oneDimensionalMap.LID(7 * nodeList[i]);
+              int localNodeID = oneDimensionalMap.LID((3 + numMultiphysDoFs) * nodeList[i]);
               if(!vec.is_null() && localNodeID != -1)  (*vec)[localNodeID+6] = 0.0;
             }
           }

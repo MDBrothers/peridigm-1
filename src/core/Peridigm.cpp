@@ -151,13 +151,13 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   peridigmComm = Teuchos::rcp(new Epetra_SerialComm);
 #endif
   if(peridigmComm->MyPID() == 0)
-	  if(params->isParameter("Two Phase Multiphysics") && params->isParameter("Restart") ){
-		  TEUCHOS_TEST_FOR_EXCEPT_MSG((params->isParameter("Two Phase Multiphysics") && params->isParameter("Restart") ), "Error: Restart for Multiphysics is not implemented yet.\n");
+	  if(params->isParameter("Two Phase Poroelasticity") && params->isParameter("Restart") ){
+		  TEUCHOS_TEST_FOR_EXCEPT_MSG((params->isParameter("Two Phase Poroelasticity") && params->isParameter("Restart") ), "Error: Restart for Poroelasticity is not implemented yet.\n");
 		  MPI_Finalize();
 		  exit(0);
 	  }
-    else if(params->isParameter("One Phase Multiphysics") && params->isParameter("Restart") ){
-		  TEUCHOS_TEST_FOR_EXCEPT_MSG((params->isParameter("One Phase Multiphysics") && params->isParameter("Restart") ), "Error: Restart for Multiphysics is not implemented yet.\n");
+    else if(params->isParameter("One Phase Poroelasticity") && params->isParameter("Restart") ){
+		  TEUCHOS_TEST_FOR_EXCEPT_MSG((params->isParameter("One Phase Poroelasticity") && params->isParameter("Restart") ), "Error: Restart for Poroelasticity is not implemented yet.\n");
 		  MPI_Finalize();
 		  exit(0);
 	  }
@@ -172,19 +172,19 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
 
   out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
-  // Process and validate requests for multiphysics
-  // Can the number of multiphysics DoFs be accomodated?
+  // Process and validate requests for Poroelasticity
+  // Can the number of Poroelasticity DoFs be accomodated?
   string multiphysError;
-  if(peridigmParams->isParameter("Two Phase Multiphysics"))
+  if(peridigmParams->isParameter("Two Phase Poroelasticity"))
   {
-    if(peridigmComm->MyPID() == 0) std::cout<< "\n**** Two Phase Multiphysics is selected.\n" << std::endl;
+    if(peridigmComm->MyPID() == 0) std::cout<< "\n**** Two Phase Poroelasticity runtime behavior has been selected.\n" << std::endl;
     twoPhasePoroelasticity = true;
     onePhasePoroelasticity = false;
     numMultiphysDoFs = 4;
   }
-  else if(peridigmParams->isParameter("One Phase Multiphysics"))
+  else if(peridigmParams->isParameter("One Phase Poroelasticity"))
   {
-    if(peridigmComm->MyPID() == 0) std::cout<< "\n**** One Phase Multiphysics is selected.\n" << std::endl;
+    if(peridigmComm->MyPID() == 0) std::cout<< "\n**** One Phase Poroelasticity runtime behavior has been selected.\n" << std::endl;
     twoPhasePoroelasticity = false;
     onePhasePoroelasticity = true;
     numMultiphysDoFs = 2;
@@ -194,25 +194,6 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     twoPhasePoroelasticity = false;
     onePhasePoroelasticity = false;
     numMultiphysDoFs = 0;
-  }
-  //We need to make sure that if multiphysics was not specified as a top level parameter, the rest of the
-  //input deck jives with that, otherwise a less than graceful segfault will occur due to the boundary condition
-  //code running before the material blocks are assigned materials.
-  if(not twoPhasePoroelasticity){
-    Teuchos::ParameterList::ConstIterator materialNamesIterator;
-    Teuchos::ParameterList materialParams = peridigmParams->sublist("Materials", true);
-    for( materialNamesIterator = materialParams.begin() ; materialNamesIterator != materialParams.end() ; ++materialNamesIterator){
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(materialParams.name(materialNamesIterator).find("Two Phase Multiphysics") != std::string::npos, "\n**** Error, multiphysics must be enabled at the top level of the input deck if a Multiphysics material is specified.\n");
-      //std::cout << materialParams.name(materialNamesIterator) << std::endl;
-    }
-  }
-  else if(not onePhasePoroelasticity){
-    Teuchos::ParameterList::ConstIterator materialNamesIterator;
-    Teuchos::ParameterList materialParams = peridigmParams->sublist("Materials", true);
-    for( materialNamesIterator = materialParams.begin() ; materialNamesIterator != materialParams.end() ; ++materialNamesIterator){
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(materialParams.name(materialNamesIterator).find("One Phase Multiphysics") != std::string::npos, "\n**** Error, multiphysics must be enabled at the top level of the input deck if a Multiphysics material is specified.\n");
-      //std::cout << materialParams.name(materialNamesIterator) << std::endl;
-    }
   }
 
   // Initialize the influence function
@@ -432,16 +413,16 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     string materialName = blockIt->getMaterialName();
 
     // Generate a relevant error message and then check whether is should be heard
-    // Material names tagged with "Multiphysics" somewhere in their name are considered by
-    // this code to be multiphysics compatible.
+    // Material names tagged with "Poroelasticity" somewhere in their name are considered by
+    // this code to be Poroelasticity compatible.
     multiphysError = "\n**** Error, for material block ";
     multiphysError += blockName;
     multiphysError += ", material ";
     multiphysError += materialName;
-    multiphysError += ", is not multiphysics compatible.\n";
-    //The following: If we tried to enable multiphysics, but aren't using the right material model in each material block, raise an exception.
-    TEUCHOS_TEST_FOR_EXCEPT_MSG((twoPhasePoroelasticity && (materialName.find("Two Phase Multiphysics") == std::string::npos)), "\n**** Error, material model is not two phase multiphysics compatible.\n");
-    TEUCHOS_TEST_FOR_EXCEPT_MSG((onePhasePoroelasticity && (materialName.find("One Phase Multiphysics") == std::string::npos)), "\n**** Error, material model is not one phase multiphysics compatible.\n");
+    multiphysError += ", is not Poroelasticity compatible.\n";
+    //The following: If we tried to enable Poroelasticity, but aren't using the right material model in each material block, raise an exception.
+    TEUCHOS_TEST_FOR_EXCEPT_MSG((twoPhasePoroelasticity && (materialName.find("Two Phase Poroelasticity") == std::string::npos)), "\n**** Error, material model is not two phase Poroelasticity compatible.\n");
+    TEUCHOS_TEST_FOR_EXCEPT_MSG((onePhasePoroelasticity && (materialName.find("One Phase Poroelasticity") == std::string::npos)), "\n**** Error, material model is not one phase Poroelasticity compatible.\n");
 
     Teuchos::ParameterList matParams = materialParams.sublist(materialName);
 
@@ -1331,8 +1312,8 @@ void PeridigmNS::Peridigm::execute(Teuchos::RCP<Teuchos::ParameterList> solverPa
 
   TEUCHOS_TEST_FOR_EXCEPT_MSG(solverParams.is_null(), "Error in Peridigm::execute, solverParams is null.\n");
 
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(twoPhasePoroelasticity && !(solverParams->isSublist("NOXQuasiStatic")), "Error in Peridigm::execute, only NOXQuasiStatic supported for Two Phase Multiphysics.\n");
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(onePhasePoroelasticity && !(solverParams->isSublist("NOXQuasiStatic")), "Error in Peridigm::execute, only NOXQuasiStatic supported for One Phase Multiphysics.\n");
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(twoPhasePoroelasticity && !(solverParams->isSublist("NOXQuasiStatic")), "Error in Peridigm::execute, only NOXQuasiStatic supported for Two Phase Poroelasticity.\n");
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(onePhasePoroelasticity && !(solverParams->isSublist("NOXQuasiStatic")), "Error in Peridigm::execute, only NOXQuasiStatic supported for One Phase Poroelasticity.\n");
 
 
   // allowable explicit time integration schemes:  Verlet
@@ -1709,7 +1690,7 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "flag = User");
   }
 
-  // Multiphysics: copy the solution vector passed in by NOX to update the deformation
+  // Poroelasticity: copy the solution vector passed in by NOX to update the deformation
 	//TODO rewrite to take advantage of indirect addressing of soln vector
   if(twoPhasePoroelasticity){
     for(int i=0 ; i < soln->MyLength() ; i+=7){
@@ -1886,7 +1867,8 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
     // copy the internal force to the residual vector
     // note that due to restrictions on CrsMatrix, these vectors have different (but equivalent) maps
     if(not twoPhasePoroelasticity){
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(residual->MyLength() != force->MyLength(), "**** PeridigmNS::Peridigm::evaluateNOX() incompatible vector lengths!\n");
+      if(not onePhasePoroelasticity)
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(residual->MyLength() != force->MyLength(), "**** PeridigmNS::Peridigm::evaluateNOX() incompatible vector lengths!\n");
     }
     else{
       TEUCHOS_TEST_FOR_EXCEPT_MSG(residual->MyLength() != combinedForce->MyLength(), "**** PeridigmNS::Peridigm::evaluateNOX() incompatible vector lengths! (residual with combinedForce)\n");
@@ -1895,23 +1877,23 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
     if(twoPhasePoroelasticity){
       //Store abstract force density immediately converted to force
       for(int i=0 ; i < combinedForce->MyLength() ; i+=7){
-        (*residual)[i+0] = ((*externalForce)[i*3/7+0] + (*combinedForce)[i+0])*(*volume)[i/7]/1000000.0;
-        (*residual)[i+1] = ((*externalForce)[i*3/7+1] + (*combinedForce)[i+1])*(*volume)[i/7]/1000000.0;
-        (*residual)[i+2] = ((*externalForce)[i*3/7+2] + (*combinedForce)[i+2])*(*volume)[i/7]/1000000.0;
-        (*residual)[i+3] = ((*externalPhaseOnePoreFlow)[i/7] + (*combinedForce)[i+3])*(*volume)[i/7]*1000000.0;
-        (*residual)[i+4] = ((*externalPhaseOneFracFlow)[i/7] + (*combinedForce)[i+4])*(*volume)[i/7]*1000000.0;
-        (*residual)[i+5] = ((*externalPhaseTwoPoreFlow)[i/7] + (*combinedForce)[i+5])*(*volume)[i/7]*1000000.0;
-        (*residual)[i+6] = ((*externalPhaseTwoFracFlow)[i/7] + (*combinedForce)[i+6])*(*volume)[i/7]*1000000.0;
+        (*residual)[i+0] = ((*externalForce)[i*3/7+0] + (*combinedForce)[i+0])*(*volume)[i/7];
+        (*residual)[i+1] = ((*externalForce)[i*3/7+1] + (*combinedForce)[i+1])*(*volume)[i/7];
+        (*residual)[i+2] = ((*externalForce)[i*3/7+2] + (*combinedForce)[i+2])*(*volume)[i/7];
+        (*residual)[i+3] = ((*externalPhaseOnePoreFlow)[i/7] + (*combinedForce)[i+3])*(*volume)[i/7];
+        (*residual)[i+4] = ((*externalPhaseOneFracFlow)[i/7] + (*combinedForce)[i+4])*(*volume)[i/7];
+        (*residual)[i+5] = ((*externalPhaseTwoPoreFlow)[i/7] + (*combinedForce)[i+5])*(*volume)[i/7];
+        (*residual)[i+6] = ((*externalPhaseTwoFracFlow)[i/7] + (*combinedForce)[i+6])*(*volume)[i/7];
       }
     }
     else if(onePhasePoroelasticity){
       //Store abstract force density immediately converted to force
       for(int i=0 ; i < combinedForce->MyLength() ; i+=5){
-        (*residual)[i+0] = ((*externalForce)[i*3/5+0] + (*combinedForce)[i+0])*(*volume)[i/5]/1000000.0;
-        (*residual)[i+1] = ((*externalForce)[i*3/5+1] + (*combinedForce)[i+1])*(*volume)[i/5]/1000000.0;
-        (*residual)[i+2] = ((*externalForce)[i*3/5+2] + (*combinedForce)[i+2])*(*volume)[i/5]/1000000.0;
-        (*residual)[i+3] = ((*externalPhaseOnePoreFlow)[i/5] + (*combinedForce)[i+3])*(*volume)[i/5]*1000000.0;
-        (*residual)[i+4] = ((*externalPhaseOneFracFlow)[i/5] + (*combinedForce)[i+4])*(*volume)[i/5]*1000000.0;
+        (*residual)[i+0] = ((*externalForce)[i*3/5+0] + (*combinedForce)[i+0])*(*volume)[i/5];
+        (*residual)[i+1] = ((*externalForce)[i*3/5+1] + (*combinedForce)[i+1])*(*volume)[i/5];
+        (*residual)[i+2] = ((*externalForce)[i*3/5+2] + (*combinedForce)[i+2])*(*volume)[i/5];
+        (*residual)[i+3] = ((*externalPhaseOnePoreFlow)[i/5] + (*combinedForce)[i+3])*(*volume)[i/5];
+        (*residual)[i+4] = ((*externalPhaseOneFracFlow)[i/5] + (*combinedForce)[i+4])*(*volume)[i/5];
       }
     }
     else{
@@ -1950,7 +1932,7 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
 void PeridigmNS::Peridigm::computeInternalForce()
 {
 
-   TEUCHOS_TEST_FOR_EXCEPT_MSG((twoPhasePoroelasticity or onePhasePoroelasticity), "**** PeridigmNS::Peridigm::computeInternalForce() is not multiphysics compatible.\n");
+   TEUCHOS_TEST_FOR_EXCEPT_MSG((twoPhasePoroelasticity or onePhasePoroelasticity), "**** PeridigmNS::Peridigm::computeInternalForce() is not Poroelasticity compatible.\n");
 
   // This function is intended for use when Peridigm is called as an external library (e.g., code coupling)
   // It is assumed that the global vectors x, u, y, and v have already been set by the driver application
@@ -2069,7 +2051,7 @@ void PeridigmNS::Peridigm::jacobianDiagnostics(Teuchos::RCP<NOX::Epetra::Group> 
 
 void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::ParameterList> solverParams) {
 
-  // The tangent map was made with multiphysics compatibility already.
+  // The tangent map was made with Poroelasticity compatibility already.
   Teuchos::RCP<Epetra_Vector> residual = Teuchos::rcp(new Epetra_Vector(tangent->Map()));
   Teuchos::RCP<Epetra_Vector> reaction;
 
@@ -2079,7 +2061,7 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
     reaction = Teuchos::rcp(new Epetra_Vector(force->Map()));
 
   // Create vectors that are specific to NOX quasi-statics.
-  // These are already sized right for multiphysics simulations because they are created with the tangent map
+  // These are already sized right for Poroelasticity simulations because they are created with the tangent map
   Teuchos::RCP<Epetra_Vector> soln = Teuchos::rcp(new Epetra_Vector(tangent->Map()));
   Teuchos::RCP<NOX::Epetra::Vector> noxSoln = Teuchos::rcp(new NOX::Epetra::Vector(soln, NOX::Epetra::Vector::CreateView));
   soln->PutScalar(0.0);
@@ -2250,7 +2232,7 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
     soln->PutScalar(0.0);
     deltaU->PutScalar(0.0);
 
-    // soln is already appropriately sized for multiphysics
+    // soln is already appropriately sized for Poroelasticity
     if(twoPhasePoroelasticity){
       porePressureDeltaU->PutScalar(0.0);
       fracturePressureDeltaU->PutScalar(0.0);
@@ -2382,22 +2364,22 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
       // convert force density to force
       if(twoPhasePoroelasticity){
         for(int i=0 ; i<reaction->MyLength() ; i+=7){
-          (*reaction)[i+0] *= (*volume)[i/7]/1000000.0; //7 = 3 solids dofs + 4 fluids dofs
-          (*reaction)[i+1] *= (*volume)[i/7]/1000000.0; //7 = 3 solids dofs + 4 fluids dofs
-          (*reaction)[i+2] *= (*volume)[i/7]/1000000.0; //7 = 3 solids dofs + 4 fluids dofs
-          (*reaction)[i+3] *= (*volume)[i/7]*1000000.0; //7 = 3 solids dofs + 4 fluids dofs
-          (*reaction)[i+4] *= (*volume)[i/7]*1000000.0; //7 = 3 solids dofs + 4 fluids dofs
-          (*reaction)[i+5] *= (*volume)[i/7]*1000000.0; //7 = 3 solids dofs + 4 fluids dofs
-          (*reaction)[i+6] *= (*volume)[i/7]*1000000.0; //7 = 3 solids dofs + 4 fluids dofs
+          (*reaction)[i+0] *= (*volume)[i/7]; //7 = 3 solids dofs + 4 fluids dofs
+          (*reaction)[i+1] *= (*volume)[i/7]; //7 = 3 solids dofs + 4 fluids dofs
+          (*reaction)[i+2] *= (*volume)[i/7]; //7 = 3 solids dofs + 4 fluids dofs
+          (*reaction)[i+3] *= (*volume)[i/7]; //7 = 3 solids dofs + 4 fluids dofs
+          (*reaction)[i+4] *= (*volume)[i/7]; //7 = 3 solids dofs + 4 fluids dofs
+          (*reaction)[i+5] *= (*volume)[i/7]; //7 = 3 solids dofs + 4 fluids dofs
+          (*reaction)[i+6] *= (*volume)[i/7]; //7 = 3 solids dofs + 4 fluids dofs
         }
       }
       else if(onePhasePoroelasticity){
         for(int i=0 ; i<reaction->MyLength() ; i+=5){
-          (*reaction)[i+0] *= (*volume)[i/7]/1000000.0; //5 = 3 solids dofs + 2 fluids dofs
-          (*reaction)[i+1] *= (*volume)[i/7]/1000000.0; //5 = 3 solids dofs + 2 fluids dofs
-          (*reaction)[i+2] *= (*volume)[i/7]/1000000.0; //5 = 3 solids dofs + 2 fluids dofs
-          (*reaction)[i+3] *= (*volume)[i/7]*1000000.0; //5 = 3 solids dofs + 2 fluids dofs
-          (*reaction)[i+4] *= (*volume)[i/7]*1000000.0; //5 = 3 solids dofs + 2 fluids dofs
+          (*reaction)[i+0] *= (*volume)[i/5]; //5 = 3 solids dofs + 2 fluids dofs
+          (*reaction)[i+1] *= (*volume)[i/5]; //5 = 3 solids dofs + 2 fluids dofs
+          (*reaction)[i+2] *= (*volume)[i/5]; //5 = 3 solids dofs + 2 fluids dofs
+          (*reaction)[i+3] *= (*volume)[i/5]; //5 = 3 solids dofs + 2 fluids dofs
+          (*reaction)[i+4] *= (*volume)[i/5]; //5 = 3 solids dofs + 2 fluids dofs
         }
       }
       else{
@@ -4269,7 +4251,7 @@ void PeridigmNS::Peridigm::writeRestart(Teuchos::RCP<Teuchos::ParameterList> sol
   outputFile.close();
   }
   if(twoPhasePoroelasticity or onePhasePoroelasticity){
-	 cout << "Restart for Multiphysics is not implemented yet." << endl;
+	 cout << "Restart for Poroelasticity is not implemented yet." << endl;
 	 exit (0);
     }
   else {
@@ -4350,7 +4332,7 @@ void PeridigmNS::Peridigm::readRestart(){
   }
   if(twoPhasePoroelasticity or onePhasePoroelasticity){
 	  if(peridigmComm->MyPID() == 0){
-		  TEUCHOS_TEST_FOR_EXCEPT_MSG(true,"Error: Restart for Multiphysics is not implemented yet.\n");
+		  TEUCHOS_TEST_FOR_EXCEPT_MSG(true,"Error: Restart for Poroelasticity is not implemented yet.\n");
 		  MPI_Finalize();
 		  exit(0);
 	  }

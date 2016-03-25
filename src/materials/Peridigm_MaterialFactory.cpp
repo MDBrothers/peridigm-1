@@ -48,6 +48,7 @@
 #include <Teuchos_Assert.hpp>
 #include "Peridigm_MaterialFactory.hpp"
 #include "Peridigm_ElasticMaterial.hpp"
+#include "Peridigm_OnePhaseMultiphysicsElasticMaterial.hpp"
 #include "Peridigm_TwoPhaseMultiphysicsElasticMaterial.hpp"
 #include "Peridigm_ElasticPlasticMaterial.hpp"
 #include "Peridigm_ElasticPlasticHardeningMaterial.hpp"

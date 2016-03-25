@@ -799,13 +799,13 @@ void PeridigmNS::TwoPhaseMultiphysicsElasticMaterial::computeComplexStepFiniteDi
             dependentID = tempNeighborhoodList[i+1];
           else
             dependentID = 0;
-          scratchMatrix(7*dependentID+0, 7*perturbID+dof) = std::imag( forceComplex[3*dependentID + 0]/epsilon )/1000000.0;
-          scratchMatrix(7*dependentID+1, 7*perturbID+dof) = std::imag( forceComplex[3*dependentID + 1]/epsilon )/1000000.0;
-          scratchMatrix(7*dependentID+2, 7*perturbID+dof) = std::imag( forceComplex[3*dependentID + 2]/epsilon )/1000000.0;
-          scratchMatrix(7*dependentID+3, 7*perturbID+dof) = std::imag( phaseOnePoreFlowComplex[dependentID]/epsilon )*1000000.0;
-          scratchMatrix(7*dependentID+4, 7*perturbID+dof) = std::imag( phaseOneFracFlowComplex[dependentID]/epsilon )*1000000.0;
-          scratchMatrix(7*dependentID+5, 7*perturbID+dof) = std::imag( phaseTwoPoreFlowComplex[dependentID]/epsilon )*1000000.0;
-          scratchMatrix(7*dependentID+6, 7*perturbID+dof) = std::imag( phaseTwoFracFlowComplex[dependentID]/epsilon )*1000000.0;
+          scratchMatrix(7*dependentID+0, 7*perturbID+dof) = std::imag( forceComplex[3*dependentID + 0]/epsilon );
+          scratchMatrix(7*dependentID+1, 7*perturbID+dof) = std::imag( forceComplex[3*dependentID + 1]/epsilon );
+          scratchMatrix(7*dependentID+2, 7*perturbID+dof) = std::imag( forceComplex[3*dependentID + 2]/epsilon );
+          scratchMatrix(7*dependentID+3, 7*perturbID+dof) = std::imag( phaseOnePoreFlowComplex[dependentID]/epsilon );
+          scratchMatrix(7*dependentID+4, 7*perturbID+dof) = std::imag( phaseOneFracFlowComplex[dependentID]/epsilon );
+          scratchMatrix(7*dependentID+5, 7*perturbID+dof) = std::imag( phaseTwoPoreFlowComplex[dependentID]/epsilon );
+          scratchMatrix(7*dependentID+6, 7*perturbID+dof) = std::imag( phaseTwoFracFlowComplex[dependentID]/epsilon );
           // Reset dependent variables to zero as if computeForce were called
           forceComplex[3*dependentID + 0] = 0.0;
           forceComplex[3*dependentID + 1] = 0.0;
@@ -836,13 +836,13 @@ void PeridigmNS::TwoPhaseMultiphysicsElasticMaterial::computeComplexStepFiniteDi
           dependentID = tempNeighborhoodList[i+1];
         else
           dependentID = 0;
-        scratchMatrix(7*dependentID+0, 7*perturbID+3) = std::imag( forceComplex[3*dependentID + 0]/epsilon )/1000000.0;
-        scratchMatrix(7*dependentID+1, 7*perturbID+3) = std::imag( forceComplex[3*dependentID + 1]/epsilon )/1000000.0;
-        scratchMatrix(7*dependentID+2, 7*perturbID+3) = std::imag( forceComplex[3*dependentID + 2]/epsilon )/1000000.0;
-        scratchMatrix(7*dependentID+3, 7*perturbID+3) = std::imag( phaseOnePoreFlowComplex[dependentID]/epsilon )*1000000.0;
-        scratchMatrix(7*dependentID+4, 7*perturbID+3) = std::imag( phaseOneFracFlowComplex[dependentID]/epsilon )*1000000.0;
-        scratchMatrix(7*dependentID+5, 7*perturbID+3) = std::imag( phaseTwoPoreFlowComplex[dependentID]/epsilon )*1000000.0;
-        scratchMatrix(7*dependentID+6, 7*perturbID+3) = std::imag( phaseTwoFracFlowComplex[dependentID]/epsilon )*1000000.0;
+        scratchMatrix(7*dependentID+0, 7*perturbID+3) = std::imag( forceComplex[3*dependentID + 0]/epsilon );
+        scratchMatrix(7*dependentID+1, 7*perturbID+3) = std::imag( forceComplex[3*dependentID + 1]/epsilon );
+        scratchMatrix(7*dependentID+2, 7*perturbID+3) = std::imag( forceComplex[3*dependentID + 2]/epsilon );
+        scratchMatrix(7*dependentID+3, 7*perturbID+3) = std::imag( phaseOnePoreFlowComplex[dependentID]/epsilon );
+        scratchMatrix(7*dependentID+4, 7*perturbID+3) = std::imag( phaseOneFracFlowComplex[dependentID]/epsilon );
+        scratchMatrix(7*dependentID+5, 7*perturbID+3) = std::imag( phaseTwoPoreFlowComplex[dependentID]/epsilon );
+        scratchMatrix(7*dependentID+6, 7*perturbID+3) = std::imag( phaseTwoFracFlowComplex[dependentID]/epsilon );
         // Reset dependent variables to zero as if computeForce were called
         forceComplex[3*dependentID + 0] = 0.0;
         forceComplex[3*dependentID + 1] = 0.0;
@@ -872,13 +872,13 @@ void PeridigmNS::TwoPhaseMultiphysicsElasticMaterial::computeComplexStepFiniteDi
           dependentID = tempNeighborhoodList[i+1];
         else
           dependentID = 0;
-        scratchMatrix(7*dependentID+0, 7*perturbID+4) = std::imag( forceComplex[3*dependentID + 0]/epsilon )/1000000.0;
-        scratchMatrix(7*dependentID+1, 7*perturbID+4) = std::imag( forceComplex[3*dependentID + 1]/epsilon )/1000000.0;
-        scratchMatrix(7*dependentID+2, 7*perturbID+4) = std::imag( forceComplex[3*dependentID + 2]/epsilon )/1000000.0;
-        scratchMatrix(7*dependentID+3, 7*perturbID+4) = std::imag( phaseOnePoreFlowComplex[dependentID]/epsilon )*1000000.0;
-        scratchMatrix(7*dependentID+4, 7*perturbID+4) = std::imag( phaseOneFracFlowComplex[dependentID]/epsilon )*1000000.0;
-        scratchMatrix(7*dependentID+5, 7*perturbID+4) = std::imag( phaseTwoPoreFlowComplex[dependentID]/epsilon )*1000000.0;
-        scratchMatrix(7*dependentID+6, 7*perturbID+4) = std::imag( phaseTwoFracFlowComplex[dependentID]/epsilon )*1000000.0;
+        scratchMatrix(7*dependentID+0, 7*perturbID+4) = std::imag( forceComplex[3*dependentID + 0]/epsilon );
+        scratchMatrix(7*dependentID+1, 7*perturbID+4) = std::imag( forceComplex[3*dependentID + 1]/epsilon );
+        scratchMatrix(7*dependentID+2, 7*perturbID+4) = std::imag( forceComplex[3*dependentID + 2]/epsilon );
+        scratchMatrix(7*dependentID+3, 7*perturbID+4) = std::imag( phaseOnePoreFlowComplex[dependentID]/epsilon );
+        scratchMatrix(7*dependentID+4, 7*perturbID+4) = std::imag( phaseOneFracFlowComplex[dependentID]/epsilon );
+        scratchMatrix(7*dependentID+5, 7*perturbID+4) = std::imag( phaseTwoPoreFlowComplex[dependentID]/epsilon );
+        scratchMatrix(7*dependentID+6, 7*perturbID+4) = std::imag( phaseTwoFracFlowComplex[dependentID]/epsilon );
         // Reset dependent variables to zero as if computeForce were called
         forceComplex[3*dependentID + 0] = 0.0;
         forceComplex[3*dependentID + 1] = 0.0;
@@ -908,13 +908,13 @@ void PeridigmNS::TwoPhaseMultiphysicsElasticMaterial::computeComplexStepFiniteDi
           dependentID = tempNeighborhoodList[i+1];
         else
           dependentID = 0;
-        scratchMatrix(7*dependentID+0, 7*perturbID+5) = std::imag( forceComplex[3*dependentID + 0]/epsilon )/1000000.0;
-        scratchMatrix(7*dependentID+1, 7*perturbID+5) = std::imag( forceComplex[3*dependentID + 1]/epsilon )/1000000.0;
-        scratchMatrix(7*dependentID+2, 7*perturbID+5) = std::imag( forceComplex[3*dependentID + 2]/epsilon )/1000000.0;
-        scratchMatrix(7*dependentID+3, 7*perturbID+5) = std::imag( phaseOnePoreFlowComplex[dependentID]/epsilon )*1000000.0;
-        scratchMatrix(7*dependentID+4, 7*perturbID+5) = std::imag( phaseOneFracFlowComplex[dependentID]/epsilon )*1000000.0;
-        scratchMatrix(7*dependentID+5, 7*perturbID+5) = std::imag( phaseTwoPoreFlowComplex[dependentID]/epsilon )*1000000.0;
-        scratchMatrix(7*dependentID+6, 7*perturbID+5) = std::imag( phaseTwoFracFlowComplex[dependentID]/epsilon )*1000000.0;
+        scratchMatrix(7*dependentID+0, 7*perturbID+5) = std::imag( forceComplex[3*dependentID + 0]/epsilon );
+        scratchMatrix(7*dependentID+1, 7*perturbID+5) = std::imag( forceComplex[3*dependentID + 1]/epsilon );
+        scratchMatrix(7*dependentID+2, 7*perturbID+5) = std::imag( forceComplex[3*dependentID + 2]/epsilon );
+        scratchMatrix(7*dependentID+3, 7*perturbID+5) = std::imag( phaseOnePoreFlowComplex[dependentID]/epsilon );
+        scratchMatrix(7*dependentID+4, 7*perturbID+5) = std::imag( phaseOneFracFlowComplex[dependentID]/epsilon );
+        scratchMatrix(7*dependentID+5, 7*perturbID+5) = std::imag( phaseTwoPoreFlowComplex[dependentID]/epsilon );
+        scratchMatrix(7*dependentID+6, 7*perturbID+5) = std::imag( phaseTwoFracFlowComplex[dependentID]/epsilon );
         // Reset dependent variables to zero as if computeForce were called
         forceComplex[3*dependentID + 0] = 0.0;
         forceComplex[3*dependentID + 1] = 0.0;
@@ -944,13 +944,13 @@ void PeridigmNS::TwoPhaseMultiphysicsElasticMaterial::computeComplexStepFiniteDi
           dependentID = tempNeighborhoodList[i+1];
         else
           dependentID = 0;
-          scratchMatrix(7*dependentID+0, 7*perturbID+6) = std::imag( forceComplex[3*dependentID + 0]/epsilon )/1000000.0;
-          scratchMatrix(7*dependentID+1, 7*perturbID+6) = std::imag( forceComplex[3*dependentID + 1]/epsilon )/1000000.0;
-          scratchMatrix(7*dependentID+2, 7*perturbID+6) = std::imag( forceComplex[3*dependentID + 2]/epsilon )/1000000.0;
-          scratchMatrix(7*dependentID+3, 7*perturbID+6) = std::imag( phaseOnePoreFlowComplex[dependentID]/epsilon )*1000000.0;
-          scratchMatrix(7*dependentID+4, 7*perturbID+6) = std::imag( phaseOneFracFlowComplex[dependentID]/epsilon )*1000000.0;
-          scratchMatrix(7*dependentID+5, 7*perturbID+6) = std::imag( phaseTwoPoreFlowComplex[dependentID]/epsilon )*1000000.0;
-          scratchMatrix(7*dependentID+6, 7*perturbID+6) = std::imag( phaseTwoFracFlowComplex[dependentID]/epsilon )*1000000.0;
+          scratchMatrix(7*dependentID+0, 7*perturbID+6) = std::imag( forceComplex[3*dependentID + 0]/epsilon );
+          scratchMatrix(7*dependentID+1, 7*perturbID+6) = std::imag( forceComplex[3*dependentID + 1]/epsilon );
+          scratchMatrix(7*dependentID+2, 7*perturbID+6) = std::imag( forceComplex[3*dependentID + 2]/epsilon );
+          scratchMatrix(7*dependentID+3, 7*perturbID+6) = std::imag( phaseOnePoreFlowComplex[dependentID]/epsilon );
+          scratchMatrix(7*dependentID+4, 7*perturbID+6) = std::imag( phaseOneFracFlowComplex[dependentID]/epsilon );
+          scratchMatrix(7*dependentID+5, 7*perturbID+6) = std::imag( phaseTwoPoreFlowComplex[dependentID]/epsilon );
+          scratchMatrix(7*dependentID+6, 7*perturbID+6) = std::imag( phaseTwoFracFlowComplex[dependentID]/epsilon );
         // Reset dependent variables to zero as if computeForce were called
         forceComplex[3*dependentID + 0] = 0.0;
         forceComplex[3*dependentID + 1] = 0.0;
