@@ -161,6 +161,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
 		  MPI_Finalize();
 		  exit(0);
 	  }
+
   peridigmParams = params;
   // set the comm for memory use statistics
   Memstat * memstat = Memstat::Instance();
@@ -1889,11 +1890,11 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
     else if(onePhasePoroelasticity){
       //Store abstract force density immediately converted to force
       for(int i=0 ; i < combinedForce->MyLength() ; i+=5){
-        (*residual)[i+0] = ((*externalForce)[i*3/5+0] + (*combinedForce)[i+0])*(*volume)[i/5];
-        (*residual)[i+1] = ((*externalForce)[i*3/5+1] + (*combinedForce)[i+1])*(*volume)[i/5];
-        (*residual)[i+2] = ((*externalForce)[i*3/5+2] + (*combinedForce)[i+2])*(*volume)[i/5];
-        (*residual)[i+3] = ((*externalPhaseOnePoreFlow)[i/5] + (*combinedForce)[i+3])*(*volume)[i/5];
-        (*residual)[i+4] = ((*externalPhaseOneFracFlow)[i/5] + (*combinedForce)[i+4])*(*volume)[i/5];
+        (*residual)[i+0] = ((*externalForce)[i*3/5+0] + (*combinedForce)[i+0])*(*volume)[i/5]/1000.0;
+        (*residual)[i+1] = ((*externalForce)[i*3/5+1] + (*combinedForce)[i+1])*(*volume)[i/5]/1000.0;
+        (*residual)[i+2] = ((*externalForce)[i*3/5+2] + (*combinedForce)[i+2])*(*volume)[i/5]/1000.0;
+        (*residual)[i+3] = ((*externalPhaseOnePoreFlow)[i/5] + (*combinedForce)[i+3])*(*volume)[i/5]*1000.0;
+        (*residual)[i+4] = ((*externalPhaseOneFracFlow)[i/5] + (*combinedForce)[i+4])*(*volume)[i/5]*1000.0;
       }
     }
     else{
@@ -2375,11 +2376,11 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
       }
       else if(onePhasePoroelasticity){
         for(int i=0 ; i<reaction->MyLength() ; i+=5){
-          (*reaction)[i+0] *= (*volume)[i/5]; //5 = 3 solids dofs + 2 fluids dofs
-          (*reaction)[i+1] *= (*volume)[i/5]; //5 = 3 solids dofs + 2 fluids dofs
-          (*reaction)[i+2] *= (*volume)[i/5]; //5 = 3 solids dofs + 2 fluids dofs
-          (*reaction)[i+3] *= (*volume)[i/5]; //5 = 3 solids dofs + 2 fluids dofs
-          (*reaction)[i+4] *= (*volume)[i/5]; //5 = 3 solids dofs + 2 fluids dofs
+          (*reaction)[i+0] *= (*volume)[i/5]/1000.0; //5 = 3 solids dofs + 2 fluids dofs
+          (*reaction)[i+1] *= (*volume)[i/5]/1000.0; //5 = 3 solids dofs + 2 fluids dofs
+          (*reaction)[i+2] *= (*volume)[i/5]/1000.0; //5 = 3 solids dofs + 2 fluids dofs
+          (*reaction)[i+3] *= (*volume)[i/5]*1000.0; //5 = 3 solids dofs + 2 fluids dofs
+          (*reaction)[i+4] *= (*volume)[i/5]*1000.0; //5 = 3 solids dofs + 2 fluids dofs
         }
       }
       else{
@@ -4042,11 +4043,11 @@ double PeridigmNS::Peridigm::computeQuasiStaticResidual(Teuchos::RCP<Epetra_Vect
     TEUCHOS_TEST_FOR_EXCEPT_MSG(residual->MyLength() != (5*externalPhaseOnePoreFlow->MyLength()), "**** PeridigmNS::Peridigm::computeQuasiStaticResidual() incompatible vector lengths!\n");
 
     for(int i=0 ; i<residual->MyLength(); i+=5){
-      (*residual)[i+0] = ((*residual)[i+0] + (*externalForce)[3*i/5+0])*(*volume)[i/5];
-      (*residual)[i+1] = ((*residual)[i+1] + (*externalForce)[3*i/5+1])*(*volume)[i/5];
-      (*residual)[i+2] = ((*residual)[i+2] + (*externalForce)[3*i/5+2])*(*volume)[i/5];
-      (*residual)[i+3] = ((*residual)[i+3] + (*externalPhaseOnePoreFlow)[i/5])*(*volume)[i/5];
-      (*residual)[i+4] = ((*residual)[i+4] + (*externalPhaseOneFracFlow)[i/5])*(*volume)[i/5];
+      (*residual)[i+0] = ((*residual)[i+0] + (*externalForce)[3*i/5+0])*(*volume)[i/5]/1000.0;
+      (*residual)[i+1] = ((*residual)[i+1] + (*externalForce)[3*i/5+1])*(*volume)[i/5]/1000.0;
+      (*residual)[i+2] = ((*residual)[i+2] + (*externalForce)[3*i/5+2])*(*volume)[i/5]/1000.0;
+      (*residual)[i+3] = ((*residual)[i+3] + (*externalPhaseOnePoreFlow)[i/5])*(*volume)[i/5]*1000.0;
+      (*residual)[i+4] = ((*residual)[i+4] + (*externalPhaseOneFracFlow)[i/5])*(*volume)[i/5]*1000.0;
     }
   }
   else{
