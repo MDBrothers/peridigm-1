@@ -1754,13 +1754,13 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
     if(analysisHasMultiphysics){
       //Store abstract force density immediately converted to force
       for(int i=0 ; i < combinedForce->MyLength() ; i+=7){
-        (*residual)[i+0] = ((*externalForce)[i*3/7+0] + (*combinedForce)[i+0])*(*volume)[i/7];
-        (*residual)[i+1] = ((*externalForce)[i*3/7+1] + (*combinedForce)[i+1])*(*volume)[i/7];
-        (*residual)[i+2] = ((*externalForce)[i*3/7+2] + (*combinedForce)[i+2])*(*volume)[i/7];
-        (*residual)[i+3] = ((*externalPhaseOnePoreFlow)[i/7] + (*combinedForce)[i+3])*(*volume)[i/7];
-        (*residual)[i+4] = ((*externalPhaseOneFracFlow)[i/7] + (*combinedForce)[i+4])*(*volume)[i/7];
-        (*residual)[i+5] = ((*externalPhaseTwoPoreFlow)[i/7] + (*combinedForce)[i+5])*(*volume)[i/7];
-        (*residual)[i+6] = ((*externalPhaseTwoFracFlow)[i/7] + (*combinedForce)[i+6])*(*volume)[i/7];
+        (*residual)[i+0] = ((*externalForce)[i*3/7+0] + (*combinedForce)[i+0])*(*volume)[i/7]/1000000.0;
+        (*residual)[i+1] = ((*externalForce)[i*3/7+1] + (*combinedForce)[i+1])*(*volume)[i/7]/1000000.0;
+        (*residual)[i+2] = ((*externalForce)[i*3/7+2] + (*combinedForce)[i+2])*(*volume)[i/7]/1000000.0;
+        (*residual)[i+3] = ((*externalPhaseOnePoreFlow)[i/7] + (*combinedForce)[i+3])*(*volume)[i/7]*1000000.0;
+        (*residual)[i+4] = ((*externalPhaseOneFracFlow)[i/7] + (*combinedForce)[i+4])*(*volume)[i/7]*1000000.0;
+        (*residual)[i+5] = ((*externalPhaseTwoPoreFlow)[i/7] + (*combinedForce)[i+5])*(*volume)[i/7]*1000000.0;
+        (*residual)[i+6] = ((*externalPhaseTwoFracFlow)[i/7] + (*combinedForce)[i+6])*(*volume)[i/7]*1000000.0;
       }
     }
     else{
@@ -2175,10 +2175,15 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
 
       // convert force density to force
       if(analysisHasMultiphysics){
-        for(int i=0 ; i<reaction->MyLength() ; ++i){
-          (*reaction)[i] *= (*volume)[i/7]; //7 = 3 solids dofs + 4 fluids dofs
+        for(int i=0 ; i<reaction->MyLength() ; i+=7){
+          (*reaction)[i+0] *= (*volume)[i/7]/1000000.0; //7 = 3 solids dofs + 4 fluids dofs
+          (*reaction)[i+1] *= (*volume)[i/7]/1000000.0; //7 = 3 solids dofs + 4 fluids dofs
+          (*reaction)[i+2] *= (*volume)[i/7]/1000000.0; //7 = 3 solids dofs + 4 fluids dofs
+          (*reaction)[i+3] *= (*volume)[i/7]*1000000.0; //7 = 3 solids dofs + 4 fluids dofs
+          (*reaction)[i+4] *= (*volume)[i/7]*1000000.0; //7 = 3 solids dofs + 4 fluids dofs
+          (*reaction)[i+5] *= (*volume)[i/7]*1000000.0; //7 = 3 solids dofs + 4 fluids dofs
+          (*reaction)[i+6] *= (*volume)[i/7]*1000000.0; //7 = 3 solids dofs + 4 fluids dofs
         }
-
       }
       else{
         for(int i=0 ; i<reaction->MyLength() ; ++i) (*reaction)[i] *= (*volume)[i/3];
