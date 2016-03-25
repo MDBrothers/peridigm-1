@@ -1907,11 +1907,11 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
     else if(onePhasePoroelasticity){
       //Store abstract force density immediately converted to force
       for(int i=0 ; i < combinedForce->MyLength() ; i+=5){
-        (*residual)[i+0] = ((*externalForce)[i*3/5+0] + (*combinedForce)[i+0])*(*volume)[i/5];
-        (*residual)[i+1] = ((*externalForce)[i*3/5+1] + (*combinedForce)[i+1])*(*volume)[i/5];
-        (*residual)[i+2] = ((*externalForce)[i*3/5+2] + (*combinedForce)[i+2])*(*volume)[i/5];
-        (*residual)[i+3] = ((*externalPhaseOnePoreFlow)[i/5] + (*combinedForce)[i+3])*(*volume)[i/5];
-        (*residual)[i+4] = ((*externalPhaseOneFracFlow)[i/5] + (*combinedForce)[i+4])*(*volume)[i/5];
+        (*residual)[i+0] = ((*externalForce)[i*3/5+0] + (*combinedForce)[i+0])*(*volume)[i/5]/1000000.0;
+        (*residual)[i+1] = ((*externalForce)[i*3/5+1] + (*combinedForce)[i+1])*(*volume)[i/5]/1000000.0;
+        (*residual)[i+2] = ((*externalForce)[i*3/5+2] + (*combinedForce)[i+2])*(*volume)[i/5]/1000000.0;
+        (*residual)[i+3] = ((*externalPhaseOnePoreFlow)[i/5] + (*combinedForce)[i+3])*(*volume)[i/5]*1000000.0;
+        (*residual)[i+4] = ((*externalPhaseOneFracFlow)[i/5] + (*combinedForce)[i+4])*(*volume)[i/5]*1000000.0;
       }
     }
     else{
