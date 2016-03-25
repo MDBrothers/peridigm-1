@@ -377,8 +377,6 @@ void computeInternalFlow
     *phaseOneFracFlowOwned = *phaseOneFracFlowOwned - *fracturePressureV*m_phaseOneDensity*(Compressibility_rock + m_phaseOneCompressibility)*Porosity*(*phaseOneSaturationFracYOwned)/B_formation_vol_factor_water + Porosity/B_formation_vol_factor_water*(*phaseOneSaturationFracVOwned);
     *phaseTwoPoreFlowOwned = *phaseTwoPoreFlowOwned - *porePressureV*m_phaseTwoDensity*(Compressibility_rock + m_phaseTwoCompressibility)*Porosity*(1.0 - *phaseOneSaturationPoresYOwned)/B_formation_vol_factor_oil + Porosity/B_formation_vol_factor_oil*(*phaseOneSaturationPoresVOwned);
     *phaseTwoFracFlowOwned = *phaseTwoFracFlowOwned - *fracturePressureV*m_phaseTwoDensity*(Compressibility_rock + m_phaseTwoCompressibility)*Porosity*(1.0 - *phaseOneSaturationFracYOwned)/B_formation_vol_factor_oil + Porosity/B_formation_vol_factor_oil*(*phaseOneSaturationFracVOwned);
-  //  if(*fracturePressureV != 0.0)
-  //    std::cout <<"************* LO AND BEHOLD" << *fracturePressureV << std::endl;
   }
 }
 
