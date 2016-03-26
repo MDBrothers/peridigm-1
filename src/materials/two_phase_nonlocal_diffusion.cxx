@@ -717,9 +717,10 @@ void computeInternalForceLinearElasticCoupled
          e -= thermalExpansionCoefficient*(*deltaT)*zeta;
 
       omega = scalarInfluenceFunction(zeta,horizon);
-      harmonicAverageDamage = 1.0 / (1.0 / *damageOwned + 1.0 / *damageNeighbor);
-      if(harmonicAverageDamage != harmonicAverageDamage) harmonicAverageDamage=0.0; //test for nan
-      c1 = omega*(*theta)*(3.0*K/(*m)-alpha/3.0) -3.0*omega/(*m)*(1.0+harmonicAverageDamage)*(*porePressureYOwned);
+      //harmonicAverageDamage = 1.0 / (1.0 / *damageOwned + 1.0 / *damageNeighbor);
+      //if(harmonicAverageDamage != harmonicAverageDamage) harmonicAverageDamage=0.0; //test for nan
+      //c1 = omega*(*theta)*(3.0*K/(*m)-alpha/3.0) -3.0*omega/(*m)*(1.0+harmonicAverageDamage)*(*porePressureYOwned);
+      c1 = omega*(*theta)*(3.0*K/(*m)-alpha/3.0) -3.0*omega/(*m)*(*porePressureYOwned);
       t = (1.0-*bondDamage)*(c1 * zeta + (1.0-*bondDamage) * omega * alpha * e);
 
       fx = t * Y_dx / dY;
