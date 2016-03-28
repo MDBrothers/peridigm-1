@@ -363,10 +363,10 @@ void computeInternalFlow
     }
 
     //Leakoff calculation, self to self
-    *phaseOnePoreFlowOwned -= m_phaseOneDensity / m_phaseOneViscosity * 4.0 / (M_PI*m_horizon_fracture*m_horizon_fracture) * (m_permeabilityScalar*phaseOneRelPermPores + m_maxPermeability/(1.0 + exp(-m_permeabilityAlpha*(*damageOwned - m_permeabilityCurveInflectionDamage))) / pow(m_horizon_fracture, 4.0)) * dLocalPoreFracPressure;
-    *phaseOneFracFlowOwned += m_phaseOneDensity / m_phaseOneViscosity * 4.0 / (M_PI*m_horizon_fracture*m_horizon_fracture) * (m_permeabilityScalar*phaseOneRelPermPores + m_maxPermeability/(1.0 + exp(-m_permeabilityAlpha*(*damageOwned - m_permeabilityCurveInflectionDamage))) / pow(m_horizon_fracture, 4.0)) * dLocalPoreFracPressure;
-    *phaseTwoPoreFlowOwned -= m_phaseTwoDensity / m_phaseTwoViscosity * 4.0 / (M_PI*m_horizon_fracture*m_horizon_fracture) * (m_permeabilityScalar*phaseTwoRelPermPores + m_maxPermeability/(1.0 + exp(-m_permeabilityAlpha*(*damageOwned - m_permeabilityCurveInflectionDamage))) / pow(m_horizon_fracture, 4.0)) * dLocalPoreFracPressure;
-    *phaseTwoFracFlowOwned += m_phaseTwoDensity / m_phaseTwoViscosity * 4.0 / (M_PI*m_horizon_fracture*m_horizon_fracture) * (m_permeabilityScalar*phaseTwoRelPermPores + m_maxPermeability/(1.0 + exp(-m_permeabilityAlpha*(*damageOwned - m_permeabilityCurveInflectionDamage))) / pow(m_horizon_fracture, 4.0)) * dLocalPoreFracPressure;
+    *phaseOnePoreFlowOwned += m_phaseOneDensity / m_phaseOneViscosity * 4.0 / (M_PI*m_horizon_fracture*m_horizon_fracture) * (m_permeabilityScalar*phaseOneRelPermPores + m_maxPermeability/(1.0 + exp(-m_permeabilityAlpha*(*damageOwned - m_permeabilityCurveInflectionDamage))) / pow(m_horizon_fracture, 4.0)) * dLocalPoreFracPressure;
+    *phaseOneFracFlowOwned -= m_phaseOneDensity / m_phaseOneViscosity * 4.0 / (M_PI*m_horizon_fracture*m_horizon_fracture) * (m_permeabilityScalar*phaseOneRelPermPores + m_maxPermeability/(1.0 + exp(-m_permeabilityAlpha*(*damageOwned - m_permeabilityCurveInflectionDamage))) / pow(m_horizon_fracture, 4.0)) * dLocalPoreFracPressure;
+    *phaseTwoPoreFlowOwned += m_phaseTwoDensity / m_phaseTwoViscosity * 4.0 / (M_PI*m_horizon_fracture*m_horizon_fracture) * (m_permeabilityScalar*phaseTwoRelPermPores + m_maxPermeability/(1.0 + exp(-m_permeabilityAlpha*(*damageOwned - m_permeabilityCurveInflectionDamage))) / pow(m_horizon_fracture, 4.0)) * dLocalPoreFracPressure;
+    *phaseTwoFracFlowOwned -= m_phaseTwoDensity / m_phaseTwoViscosity * 4.0 / (M_PI*m_horizon_fracture*m_horizon_fracture) * (m_permeabilityScalar*phaseTwoRelPermPores + m_maxPermeability/(1.0 + exp(-m_permeabilityAlpha*(*damageOwned - m_permeabilityCurveInflectionDamage))) / pow(m_horizon_fracture, 4.0)) * dLocalPoreFracPressure;
 
     //Viscous terms
     double Porosity= 0.2;
@@ -629,10 +629,10 @@ void computeInternalFlowComplex
     }
 
     //Leakoff calculation, self to self
-    *phaseOnePoreFlowOwned -= m_phaseOneDensity / m_phaseOneViscosity * 4.0 / (M_PI*m_horizon_fracture*m_horizon_fracture) * (m_permeabilityScalar*phaseOneRelPermPores + m_maxPermeability/(1.0 + exp(-m_permeabilityAlpha*(*damageOwned - m_permeabilityCurveInflectionDamage))) / pow(m_horizon_fracture, 4.0)) * dLocalPoreFracPressure;
-    *phaseOneFracFlowOwned += m_phaseOneDensity / m_phaseOneViscosity * 4.0 / (M_PI*m_horizon_fracture*m_horizon_fracture) * (m_permeabilityScalar*phaseOneRelPermPores + m_maxPermeability/(1.0 + exp(-m_permeabilityAlpha*(*damageOwned - m_permeabilityCurveInflectionDamage))) / pow(m_horizon_fracture, 4.0)) * dLocalPoreFracPressure;
-    *phaseTwoPoreFlowOwned -= m_phaseTwoDensity / m_phaseTwoViscosity * 4.0 / (M_PI*m_horizon_fracture*m_horizon_fracture) * (m_permeabilityScalar*phaseTwoRelPermPores + m_maxPermeability/(1.0 + exp(-m_permeabilityAlpha*(*damageOwned - m_permeabilityCurveInflectionDamage))) / pow(m_horizon_fracture, 4.0)) * dLocalPoreFracPressure;
-    *phaseTwoFracFlowOwned += m_phaseTwoDensity / m_phaseTwoViscosity * 4.0 / (M_PI*m_horizon_fracture*m_horizon_fracture) * (m_permeabilityScalar*phaseTwoRelPermPores + m_maxPermeability/(1.0 + exp(-m_permeabilityAlpha*(*damageOwned - m_permeabilityCurveInflectionDamage))) / pow(m_horizon_fracture, 4.0)) * dLocalPoreFracPressure;
+    *phaseOnePoreFlowOwned += m_phaseOneDensity / m_phaseOneViscosity * 4.0 / (M_PI*m_horizon_fracture*m_horizon_fracture) * (m_permeabilityScalar*phaseOneRelPermPores + m_maxPermeability/(1.0 + exp(-m_permeabilityAlpha*(*damageOwned - m_permeabilityCurveInflectionDamage))) / pow(m_horizon_fracture, 4.0)) * dLocalPoreFracPressure;
+    *phaseOneFracFlowOwned -= m_phaseOneDensity / m_phaseOneViscosity * 4.0 / (M_PI*m_horizon_fracture*m_horizon_fracture) * (m_permeabilityScalar*phaseOneRelPermPores + m_maxPermeability/(1.0 + exp(-m_permeabilityAlpha*(*damageOwned - m_permeabilityCurveInflectionDamage))) / pow(m_horizon_fracture, 4.0)) * dLocalPoreFracPressure;
+    *phaseTwoPoreFlowOwned += m_phaseTwoDensity / m_phaseTwoViscosity * 4.0 / (M_PI*m_horizon_fracture*m_horizon_fracture) * (m_permeabilityScalar*phaseTwoRelPermPores + m_maxPermeability/(1.0 + exp(-m_permeabilityAlpha*(*damageOwned - m_permeabilityCurveInflectionDamage))) / pow(m_horizon_fracture, 4.0)) * dLocalPoreFracPressure;
+    *phaseTwoFracFlowOwned -= m_phaseTwoDensity / m_phaseTwoViscosity * 4.0 / (M_PI*m_horizon_fracture*m_horizon_fracture) * (m_permeabilityScalar*phaseTwoRelPermPores + m_maxPermeability/(1.0 + exp(-m_permeabilityAlpha*(*damageOwned - m_permeabilityCurveInflectionDamage))) / pow(m_horizon_fracture, 4.0)) * dLocalPoreFracPressure;
 
     //Viscous terms
     double Porosity= 0.2;
