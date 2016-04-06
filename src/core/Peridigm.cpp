@@ -121,6 +121,8 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     contactForceDensityFieldId(-1),
     externalForceDensityFieldId(-1),
     partialVolumeFieldId(-1),
+    matrixPorosityFieldId(-1),
+    fracturePorosityFieldId(-1),
     phaseOneSaturationPoresYFieldId(-1),
     phaseOneSaturationPoresUFieldId(-1),
     phaseOneSaturationPoresVFieldId(-1),
@@ -341,6 +343,9 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     phaseOnePoreExternalFlowDensityFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Phase_1_External_Pore_Flow_Density");
     phaseOneFracFlowDensityFieldId  = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Phase_1_Frac_Flow_Density");
     phaseOneFracExternalFlowDensityFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Phase_1_External_Frac_Flow_Density");
+
+    matrixPorosityFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Matrix_Porosity");
+    fracturePorosityFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Fracture_Porosity");
   }
 
   modelCoordinatesFieldId            = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::CONSTANT, "Model_Coordinates");
@@ -518,6 +523,9 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
 
     auxiliaryFieldIds.push_back(phaseOnePoreExternalFlowDensityFieldId);
     auxiliaryFieldIds.push_back(phaseOneFracExternalFlowDensityFieldId);
+
+    auxiliaryFieldIds.push_back(matrixPorosityFieldId);
+    auxiliaryFieldIds.push_back(fracturePorosityFieldId);
   }
   if(computeIntersections){
     int tempFieldId;
@@ -591,7 +599,6 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
       blockIt->importData(*scratchOneD, fracturePressureYFieldId, PeridigmField::STEP_NP1, Insert);
     }
   }
-
 
   // Compute element-horizon intersections
 #ifdef PERIDIGM_PV
@@ -903,7 +910,7 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
     scratchOneD = Teuchos::rcp((*oneDimensionalMothership)(29), false);       // one dimensional scratch vector useful for gather operations
   }
   else if(onePhasePoroelasticity){
-    oneDimensionalMothership = Teuchos::rcp(new Epetra_MultiVector(*oneDimensionalMap, 18));
+    oneDimensionalMothership = Teuchos::rcp(new Epetra_MultiVector(*oneDimensionalMap, 20));
     blockIDs = Teuchos::rcp((*oneDimensionalMothership)(0), false);         // block ID
     horizon = Teuchos::rcp((*oneDimensionalMothership)(1), false);          // horizon for each point
     volume = Teuchos::rcp((*oneDimensionalMothership)(2), false);           // cell volume
@@ -922,6 +929,8 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
     phaseOneFracFlow = Teuchos::rcp((*oneDimensionalMothership)(15), false);
     externalPhaseOneFracFlow = Teuchos::rcp((*oneDimensionalMothership)(16), false);
     scratchOneD = Teuchos::rcp((*oneDimensionalMothership)(17), false);       // one dimensional scratch vector useful for gather operations
+    matrixPorosity = Teuchos::rcp((*oneDimensionalMothership)(18), false);
+    fracturePorosity = Teuchos::rcp((*oneDimensionalMothership)(19), false);
   }
   else {
     oneDimensionalMothership = Teuchos::rcp(new Epetra_MultiVector(*oneDimensionalMap, 5));

@@ -325,6 +325,8 @@ namespace PeridigmNS {
     Teuchos::RCP<Epetra_Vector> getY() { return y; }
     Teuchos::RCP<Epetra_Vector> getV() { return v; }
     Teuchos::RCP<Epetra_Vector> getA() { return a; }
+    Teuchos::RCP<Epetra_Vector> getMatrixPorosity() {return matrixPorosity; }
+    Teuchos::RCP<Epetra_Vector> getFractureProrosity() {return fracturePorosity; }
     Teuchos::RCP<Epetra_Vector> getPhaseOneSaturationPoresY() { return phaseOneSaturationPoresY; }
     Teuchos::RCP<Epetra_Vector> getPhaseOneSaturationFracY() { return phaseOneSaturationFracY; }
     Teuchos::RCP<Epetra_Vector> getPhaseOneSaturationPoresU() { return phaseOneSaturationPoresU; }
@@ -541,13 +543,17 @@ namespace PeridigmNS {
     //! Global vector for delta fracture pressure
     Teuchos::RCP<Epetra_Vector> fracturePressureDeltaU;
 
-    //! Global vector for species one fraction in pores
+    //! Global vectors for matrix and fracture prorosities, the volume fraction available to fluid occupancy
+    Teuchos::RCP<Epetra_Vector> matrixPorosity;
+    Teuchos::RCP<Epetra_Vector> fracturePorosity;
+
+    //! Global vector for phase one fraction in pores
     Teuchos::RCP<Epetra_Vector> phaseOneSaturationPoresIncrement;
     Teuchos::RCP<Epetra_Vector> phaseOneSaturationPoresV;
     Teuchos::RCP<Epetra_Vector> phaseOneSaturationPoresY;
     Teuchos::RCP<Epetra_Vector> phaseOneSaturationPoresU;
 
-    //! Global vector for species one fraction in fracture
+    //! Global vector for phase one fraction in fracture
     Teuchos::RCP<Epetra_Vector> phaseOneSaturationFracIncrement;
     Teuchos::RCP<Epetra_Vector> phaseOneSaturationFracV;
     Teuchos::RCP<Epetra_Vector> phaseOneSaturationFracY;
@@ -633,6 +639,9 @@ namespace PeridigmNS {
     int fracturePressureYFieldId;
     int fracturePressureUFieldId;
     int fracturePressureVFieldId;
+
+    int matrixPorosityFieldId;
+    int fracturePorosityFieldId;
 
     int phaseOneSaturationPoresYFieldId;
     int phaseOneSaturationPoresUFieldId;

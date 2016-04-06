@@ -114,6 +114,55 @@ void computeInternalFlowComplex
   const double* deltaTemperature
 );
 
+//! Compute the new matrix Porosity
+void computeMatrixPorosityComplex
+(
+  std::complex<double>* matrixPorosityNP1,
+  const std::complex<double>* matrixPorosityN,
+  const std::complex<double>* porePressureYOverlapNP1,
+  const std::complex<double>* porePressureYOverlapN,
+  const std::complex<double>* dilatationNP1,
+  const std::complex<double>* dilatationN,
+  const double compressibilityRock,
+  const double alpha,
+  const int* localNeighborList,
+  int numOwnedPoints
+);
+
+void computeMatrixPorosity
+(
+  double* matrixPorosityNP1,
+  const double* matrixPorosityN,
+  const double* porePressureYOverlapNP1,
+  const double* porePressureYOverlapN,
+  const double* dilatationNP1,
+  const double* dilatationN,
+  const double compressibilityRock,
+  const double alpha,
+  const int* localNeighborList,
+  int numOwnedPoints
+);
+
+//! Compute the new fracture Porosity
+void computeFracturePorosityComplex
+(
+  std::complex<double>* fracturePorosityNP1,
+  const std::complex<double>* breaklessDilatationOwnedNP1,
+  const double* criticalDilatationOwned,
+  const int* localNeighborList,
+  int numOwnedPoints
+);
+
+void computeFracturePorosity
+(
+  double* fracturePorosityNP1,
+  const double* breaklessDilatationOwnedNP1,
+  const double* criticalDilatationOwned,
+  const int* localNeighborList,
+  int numOwnedPoints
+);
+
+
 }
 
 #endif // ONE_PHASE_DIFFUSION_H
