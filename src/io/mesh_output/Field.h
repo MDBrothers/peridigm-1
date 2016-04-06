@@ -86,6 +86,8 @@ enum Type {
   PLASTIC_CONSISTENCY,
   NORM_DEVIATORIC_FORCE_STATE,
   NUM_NEIGHBORS,
+  MATRIX_POROSITY,
+  FRACTURE_POROSITY,
   PHASE_1_SATURATION_PORES_Y,
   PHASE_1_SATURATION_PORES_U,
   PHASE_1_SATURATION_PORES_V,
@@ -269,6 +271,9 @@ const Field_NS::FieldSpec GLOBAL_ANGULAR_MOMENTUM(Field_ENUM::ANGULAR_MOMENTUM, 
 /*
  * Multiphysics fieldspecs
  */
+const Field_NS::FieldSpec MATRIX_POROSITY (Field_ENUM::MATRIX_POROSITY,  Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Matrix_Porosity");
+const Field_NS::FieldSpec FRACTURE_POROSITY (Field_ENUM::FRACTURE_POROSITY,  Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Fracture_Porosity");
+
 const Field_NS::FieldSpec PHASE_1_SATURATION_PORES_Y (Field_ENUM::PHASE_1_SATURATION_PORES_Y,  Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_1_Saturation_Pores_Y");
 const Field_NS::FieldSpec PHASE_1_SATURATION_PORES_U (Field_ENUM::PHASE_1_SATURATION_PORES_U,  Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_1_Saturations_Pores_U");
 const Field_NS::FieldSpec PHASE_1_SATURATION_PORES_V (Field_ENUM::PHASE_1_SATURATION_PORES_V,  Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_1_Saturation_Pores_U");
@@ -362,6 +367,8 @@ struct FieldSpecMap {
     mymap[GLOBAL_LINEAR_MOMENTUM.getLabel()]       = GLOBAL_LINEAR_MOMENTUM;
     mymap[GLOBAL_ANGULAR_MOMENTUM.getLabel()]      = GLOBAL_ANGULAR_MOMENTUM;
     // point scalar fieldspecs
+    mymap[MATRIX_POROSITY.getLabel()]              = MATRIX_POROSITY;
+    mymap[FRACTURE_POROSITY.getLabel()]            = FRACTURE_POROSITY;
     mymap[PHASE_1_SATURATION_PORES_Y.getLabel()]   = PHASE_1_SATURATION_PORES_Y;
     mymap[PHASE_1_SATURATION_PORES_U.getLabel()]   = PHASE_1_SATURATION_PORES_U;
     mymap[PHASE_1_SATURATION_PORES_V.getLabel()]   = PHASE_1_SATURATION_PORES_V;
