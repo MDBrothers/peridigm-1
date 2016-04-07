@@ -276,7 +276,6 @@ void computeMatrixPorosity
   const ScalarT* dilatationN,
   const double compressibilityRock,
   const double alpha,
-  const int* localNeighborList,
   int numOwnedPoints
 ){
   ScalarT* phiMatrixNP1 = matrixPorosityNP1;
@@ -303,7 +302,6 @@ template void computeMatrixPorosity<std::complex<double> >
   const std::complex<double>* dilatationN,
   const double compressibilityRock,
   const double alpha,
-  const int* localNeighborList,
   int numOwnedPoints
 );
 
@@ -347,7 +345,6 @@ template void computeFracturePorosity<std::complex<double> >
   std::complex<double>* fracturePorosityNP1,
   const std::complex<double>* breaklessDilatationOwnedNP1,
   const double* criticalDilatationOwned,
-  const int* localNeighborList,
   int numOwnedPoints
 ){
   const std::complex<double>* thetaLocal = breaklessDilatationOwnedNP1; //The definition of local dilatation from Hisanao's formulation matches the standard definition of dilatation without a damage model.
@@ -366,8 +363,41 @@ template void computeFracturePorosity<double>
   double* fracturePorosityNP1,
   const double* breaklessDilatationOwnedNP1,
   const double* criticalDilatationOwned,
-  const int* localNeighborList,
   int numOwnedPoints
-){
+);
 
+template<typename ScalarT>
+void computePhaseOneDensityInPores
+(
+  ScalarT* phaseOneDensityInPores,
+  const ScalarT* porePressureYOVerlap,
+  const double* deltaTemperature,
+  int numOwnedPoints
+)
+//Please see the following code. (pressure [Pa], Temperature [K], density: water density [kg/m3], enthalpy: water enthalpy [J/kg], internalEnergy: water internal energy[J/kg])
+inline void get_water_prop_2comp_simple_peri(double Pressure, double Temperature,  double &density, double &enthalpy, double &internalEnergy)
+{
+	double P;
+	double dtemp, dtemp2;
+
+	P = Pressure*1.0e-6;
+	dtemp = P*P;
+	dtemp2 = Temperature*Temperature;
+
+	density = (-0.00000014569010515*dtemp + 0.000046724532297*P - 0.0061488874609)*dtemp2
+		+ (0.000088493144499*dtemp - 0.029002566308*P + 3.3982146161)*Temperature
+		- 0.013875092279*dtemp + 4.9439957018*P + 530.4110022;
+	//density = 1000*(1+5e-10*(Pressure-0.1e+6));
+	//density = 1000;
+	enthalpy = (-0.00021992452509*dtemp + 0.037121520627*P - 0.62144893236)*dtemp2 + (0.14041054093*dtemp - 24.86452127*P + 4549.1148295)*Temperature - 22.685476185*dtemp + 5039.7750745*P - 1196243.3551;
+	internalEnergy = enthalpy - Pressure / density;
+	//internalEnergy = enthalpy;
 }
+
+template<typename ScalarT>
+void computePhaseOneDensityInFracture
+(
+  ScalarT* phaseOneDensityInFracture,
+  const ScalarT* fracturePRessureYOverlap,
+  const double* deltaTemperature
+);

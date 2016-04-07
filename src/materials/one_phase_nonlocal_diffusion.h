@@ -85,6 +85,8 @@ void computeInternalFlow
 );
 
 //! Computes contributions to the internal flow resulting from owned points.
+// This is not an explicit template sepcialization because with finite difference
+// velocities are perturbed. Meaning the template cannot match the reguirements.
 void computeInternalFlowComplex
 (
   const std::complex<double>* yOverlap,
@@ -126,7 +128,6 @@ void computeMatrixPorosity
   const ScalarT* dilatationN,
   const double compressibilityRock,
   const double alpha,
-  const int* localNeighborList,
   int numOwnedPoints
 );
 
@@ -136,7 +137,6 @@ void computeFracturePorosity
   ScalarT* fracturePorosityNP1,
   const ScalarT* breaklessDilatationOwnedNP1,
   const double* criticalDilatationOwned,
-  const int* localNeighborList,
   int numOwnedPoints
 );
 
