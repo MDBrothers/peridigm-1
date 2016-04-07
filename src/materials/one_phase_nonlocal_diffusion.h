@@ -115,53 +115,46 @@ void computeInternalFlowComplex
 );
 
 //! Compute the new matrix Porosity
-void computeMatrixPorosityComplex
-(
-  std::complex<double>* matrixPorosityNP1,
-  const std::complex<double>* matrixPorosityN,
-  const std::complex<double>* porePressureYOverlapNP1,
-  const std::complex<double>* porePressureYOverlapN,
-  const std::complex<double>* dilatationNP1,
-  const std::complex<double>* dilatationN,
-  const double compressibilityRock,
-  const double alpha,
-  const int* localNeighborList,
-  int numOwnedPoints
-);
-
+template<typename ScalarT>
 void computeMatrixPorosity
 (
-  double* matrixPorosityNP1,
-  const double* matrixPorosityN,
-  const double* porePressureYOverlapNP1,
-  const double* porePressureYOverlapN,
-  const double* dilatationNP1,
-  const double* dilatationN,
+  ScalarT* matrixPorosityNP1,
+  const ScalarT* matrixPorosityN,
+  const ScalarT* porePressureYOverlapNP1,
+  const ScalarT* porePressureYOverlapN,
+  const ScalarT* dilatationNP1,
+  const ScalarT* dilatationN,
   const double compressibilityRock,
   const double alpha,
   const int* localNeighborList,
   int numOwnedPoints
 );
 
-//! Compute the new fracture Porosity
-void computeFracturePorosityComplex
-(
-  std::complex<double>* fracturePorosityNP1,
-  const std::complex<double>* breaklessDilatationOwnedNP1,
-  const double* criticalDilatationOwned,
-  const int* localNeighborList,
-  int numOwnedPoints
-);
-
+template<typename ScalarT>
 void computeFracturePorosity
 (
-  double* fracturePorosityNP1,
-  const double* breaklessDilatationOwnedNP1,
+  ScalarT* fracturePorosityNP1,
+  const ScalarT* breaklessDilatationOwnedNP1,
   const double* criticalDilatationOwned,
   const int* localNeighborList,
   int numOwnedPoints
 );
 
+template<typename ScalarT>
+void computePhaseOneDensityInPores
+(
+  ScalarT* phaseOneDensityInPores,
+  const ScalarT* porePressureYOVerlap,
+  const double* deltaTemperature
+);
+
+template<typename ScalarT>
+void computePhaseOneDensityInFracture
+(
+  ScalarT* phaseOneDensityInFracture,
+  const ScalarT* fracturePRessureYOverlap,
+  const double* deltaTemperature
+);
 
 }
 

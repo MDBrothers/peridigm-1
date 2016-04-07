@@ -292,7 +292,7 @@ void computeMatrixPorosity
   }
 }
 
-//! Compute the new matrix Porosity
+//! Explicit template instantiation for method to compute the new matrix Porosity
 template void computeMatrixPorosity<std::complex<double> >
 (
   std::complex<double>* matrixPorosityNP1,
@@ -307,7 +307,7 @@ template void computeMatrixPorosity<std::complex<double> >
   int numOwnedPoints
 );
 
-//! Compute the new matrix Porosity
+//! Explicit template intstantiation for method to compute the new matrix Porosity
 template void computeMatrixPorosity<double>
 (
   double* matrixPorosityNP1,
@@ -321,25 +321,6 @@ template void computeMatrixPorosity<double>
   const int* localNeighborList,
   int numOwnedPoints
 );
-
-//! Compute the new fracture Porosity
-void computeFracturePorosityComplex
-(
-  std::complex<double>* fracturePorosityNP1,
-  const std::complex<double>* breaklessDilatationOwnedNP1,
-  const double* criticalDilatationOwned,
-  const int* localNeighborList,
-  int numOwnedPoints
-){
-  const std::complex<double>* thetaLocal = breaklessDilatationOwnedNP1; //The definition of local dilatation from Hisanao's formulation matches the standard definition of dilatation without a damage model.
-  const double* thetaCritical = criticalDilatationOwned;
-  std::complex<double>* fracturePorosity = fracturePorosityNP1;
-
-  for(int p=0; p<numOwnedPoints;p++, thetaLocal++, thetaCritical++, fracturePorosity++){
-    *fracturePorosity = *thetaLocal - *thetaCritical;
-    if(std::real(*fracturePorosity) < 0.0) *fracturePorosity = std::complex(0.0, std::imag(*fracturePorosity)); //No negative porosities.
-  }
-}
 
 template<typename ScalarT>
 void computeFracturePorosity
@@ -359,5 +340,34 @@ void computeFracturePorosity
     if(*fracturePorosity < 0.0) *fracturePorosity = 0.0; //No negative porosities.
   }
 }
+
+//! Explicit template specialization for to compute the new fracture Porosity
+template void computeFracturePorosity<std::complex<double> >
+(
+  std::complex<double>* fracturePorosityNP1,
+  const std::complex<double>* breaklessDilatationOwnedNP1,
+  const double* criticalDilatationOwned,
+  const int* localNeighborList,
+  int numOwnedPoints
+){
+  const std::complex<double>* thetaLocal = breaklessDilatationOwnedNP1; //The definition of local dilatation from Hisanao's formulation matches the standard definition of dilatation without a damage model.
+  const double* thetaCritical = criticalDilatationOwned;
+  std::complex<double>* fracturePorosity = fracturePorosityNP1;
+
+  for(int p=0; p<numOwnedPoints;p++, thetaLocal++, thetaCritical++, fracturePorosity++){
+    *fracturePorosity = *thetaLocal - *thetaCritical;
+    if(std::real(*fracturePorosity) < 0.0) *fracturePorosity = std::complex(0.0, std::imag(*fracturePorosity)); //No negative porosities.
+  }
+}
+
+//! Explcit template instantiation for to compute the fracture Porosity
+template void computeFracturePorosity<double>
+(
+  double* fracturePorosityNP1,
+  const double* breaklessDilatationOwnedNP1,
+  const double* criticalDilatationOwned,
+  const int* localNeighborList,
+  int numOwnedPoints
+){
 
 }
