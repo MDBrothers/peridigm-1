@@ -224,16 +224,17 @@ namespace PeridigmNS {
   int m_fracturePressureVFieldId;
   int m_phaseOnePoreFlowDensityFieldId;
   int m_phaseOneFracFlowDensityFieldId;
+	int m_phaseOneDensityInPoresFieldId;
+	int m_phaseOneDensityInFractureFieldId;
+	int m_matrixPorosityFieldId;
+	int m_fracturePorosityFieldId;
 
 	double m_permeabilityScalar;
-  double m_permeabilityCurveInflectionDamage;
-  double m_permeabilityAlpha;
-  double m_maxPermeability;
-  double m_phaseOneBasePerm;
-  double m_phaseOneDensity;
   double m_phaseOneCompressibility;
   double m_phaseOneViscosity;
 	double m_criticalStretch;
+	double m_compressibilityRock;
+	double m_alpha;
   };
 }
 

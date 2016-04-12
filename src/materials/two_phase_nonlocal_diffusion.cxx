@@ -654,6 +654,7 @@ void computeInternalForceLinearElasticCoupled
   const double* xOverlap,
   const ScalarT* yOverlap,
   const ScalarT* porePressureYOverlap,
+	const ScalarT* fracturePressureYOverlap,
   const double* mOwned,
   const double* volumeOverlap,
   const ScalarT* dilatationOwned,
@@ -667,6 +668,7 @@ void computeInternalForceLinearElasticCoupled
   const double SHEAR_MODULUS,
   const double horizon,
   const double thermalExpansionCoefficient,
+	const double m_alpha,
   const double* deltaTemperature
 )
 {
@@ -680,6 +682,7 @@ void computeInternalForceLinearElasticCoupled
   const double *xOwned = xOverlap;
   const ScalarT *yOwned = yOverlap;
   const ScalarT *porePressureYOwned = porePressureYOverlap;
+	const ScalarT *fracturePressureYOwned = fracturePressureYOverlap;
   const double *deltaT = deltaTemperature;
   const double *m = mOwned;
   const double *v = volumeOverlap;
@@ -690,7 +693,7 @@ void computeInternalForceLinearElasticCoupled
   const int *neighPtr = localNeighborList;
   double cellVolume, alpha, X_dx, X_dy, X_dz, zeta, omega, harmonicAverageDamage;
   ScalarT Y_dx, Y_dy, Y_dz, dY, t, fx, fy, fz, e, c1;
-  for(int p=0;p<numOwnedPoints;p++, porePressureYOwned++, xOwned +=3, yOwned +=3, fOwned+=3, deltaT++, m++, theta++, damageOwned++){
+  for(int p=0;p<numOwnedPoints;p++, porePressureYOwned++, fracturePressureYOwned++, xOwned +=3, yOwned +=3, fOwned+=3, deltaT++, m++, theta++, damageOwned++){
 
     int numNeigh = *neighPtr; neighPtr++;
     const double *X = xOwned;
@@ -717,11 +720,9 @@ void computeInternalForceLinearElasticCoupled
          e -= thermalExpansionCoefficient*(*deltaT)*zeta;
 
       omega = scalarInfluenceFunction(zeta,horizon);
-      //harmonicAverageDamage = 1.0 / (1.0 / *damageOwned + 1.0 / *damageNeighbor);
-      //if(harmonicAverageDamage != harmonicAverageDamage) harmonicAverageDamage=0.0; //test for nan
-      //c1 = omega*(*theta)*(3.0*K/(*m)-alpha/3.0) -3.0*omega/(*m)*(1.0+harmonicAverageDamage)*(*porePressureYOwned);
-      c1 = omega*(*theta)*(3.0*K/(*m)-alpha/3.0) -3.0*omega/(*m)*(*porePressureYOwned);
-      t = (1.0-*bondDamage)*(c1 * zeta + (1.0-*bondDamage) * omega * alpha * e);
+			//m_alpha is biot coefficient
+			c1 = omega*(*theta)*(3.0*K/(*m)-alpha/3.0) -3.0*omega/(*m)*m_alpha*(*porePressureYOwned);
+			t = -3.0*(*bondDamage)*(*fracturePressureYOwned)*omega/(*m)*zeta + (1.0-*bondDamage)*(c1 * zeta + (1.0-*bondDamage) * omega * alpha * e);
 
       fx = t * Y_dx / dY;
       fy = t * Y_dy / dY;
@@ -732,7 +733,6 @@ void computeInternalForceLinearElasticCoupled
       fInternalOverlap[3*localId+0] -= fx*selfCellVolume;
       fInternalOverlap[3*localId+1] -= fy*selfCellVolume;
       fInternalOverlap[3*localId+2] -= fz*selfCellVolume;
-
     }
   }
 }
@@ -743,6 +743,7 @@ template void computeInternalForceLinearElasticCoupled<double>
   const double* xOverlap,
   const double* yOverlap,
   const double* porePressureYOverlap,
+	const double* fracturePressureYOverlap,
   const double* mOwned,
   const double* volumeOverlap,
   const double* dilatationOwned,
@@ -756,6 +757,7 @@ template void computeInternalForceLinearElasticCoupled<double>
   const double SHEAR_MODULUS,
   const double horizon,
   const double thermalExpansionCoefficient,
+	const double m_alpha,
   const double* deltaTemperature
 );
 
@@ -765,6 +767,7 @@ template void computeInternalForceLinearElasticCoupled<Sacado::Fad::DFad<double>
   const double* xOverlap,
   const Sacado::Fad::DFad<double>* yOverlap,
   const Sacado::Fad::DFad<double>* porePressureYOverlap,
+	const Sacado::Fad::DFad<double>* fracturePressureYOverlap,
   const double* mOwned,
   const double* volumeOverlap,
   const Sacado::Fad::DFad<double>* dilatationOwned,
@@ -778,6 +781,7 @@ template void computeInternalForceLinearElasticCoupled<Sacado::Fad::DFad<double>
   const double SHEAR_MODULUS,
   const double horizon,
   const double thermalExpansionCoefficient,
+	const double m_alpha,
   const double* deltaTemperature
 );
 
@@ -787,6 +791,7 @@ template void computeInternalForceLinearElasticCoupled<std::complex<double> >
   const double* xOverlap,
   const std::complex<double>* yOverlap,
   const std::complex<double>* porePressureYOverlap,
+	const std::complex<double>* fracturePressureYOverlap,
   const double* mOwned,
   const double* volumeOverlap,
   const std::complex<double>* dilatationOwned,
@@ -800,6 +805,7 @@ template void computeInternalForceLinearElasticCoupled<std::complex<double> >
   const double SHEAR_MODULUS,
   const double horizon,
   const double thermalExpansionCoefficient,
+	const double m_alpha,
   const double* deltaTemperature
 );
 

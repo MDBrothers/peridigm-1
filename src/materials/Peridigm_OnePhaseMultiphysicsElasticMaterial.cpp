@@ -88,12 +88,6 @@ PeridigmNS::OnePhaseMultiphysicsElasticMaterial::OnePhaseMultiphysicsElasticMate
     m_phaseOnePoreFlowDensityFieldId(-1),
     m_phaseOneFracFlowDensityFieldId(-1),
 		m_permeabilityScalar(0.0),
-	  m_permeabilityCurveInflectionDamage(0.0),
-	  m_permeabilityAlpha(0.0),
-	  m_maxPermeability(0.0),
-	  m_phaseOneBasePerm(0.0),
-	  m_phaseOneDensity(0.0),
-	  m_phaseOneCompressibility(0.0),
 	  m_phaseOneViscosity(0.0),
 		m_criticalStretch(0.0)
 {
@@ -104,25 +98,16 @@ PeridigmNS::OnePhaseMultiphysicsElasticMaterial::OnePhaseMultiphysicsElasticMate
   m_horizon = params.get<double>("Horizon");
   m_horizon_fracture = params.get<double>("Frac Diffusion Horizon");
 	m_permeabilityScalar = params.get<double>("Matrix Permeability");
-	m_permeabilityCurveInflectionDamage = params.get<double>("Matrix Permeability Curve Inflection Damage");
-	m_permeabilityAlpha = params.get<double>("Matrix Permeability Alpha");
-	m_maxPermeability = params.get<double>("Matrix Max Permeability");
-	m_phaseOneBasePerm = params.get<double>("Phase One Permeability");
-	m_phaseOneDensity = params.get<double>("Phase One Density");
-	m_phaseOneCompressibility = params.get<double>("Phase One Compressibility");
 	m_phaseOneViscosity = params.get<double>("Phase One Viscosity");
 	m_criticalStretch = params.get<double>("Material Duplicate Critical Stretch");
+	m_compressibilityRock = params.get<double>("Compressibility of Rock");
+	m_alpha = params.get<double>("alpha");
 
   materialProperties["Density"] = m_density;
   materialProperties["Horizon"] = m_horizon;
   materialProperties["Horizon Frac"] = m_horizon_fracture;
   materialProperties["Phase One Permeability"] = m_phaseOneBasePerm;
-  materialProperties["Phase One Density"] = m_phaseOneDensity;
-  materialProperties["Phase One Compressibility"] = m_phaseOneCompressibility;
   materialProperties["Phase One Viscosity"] = m_phaseOneViscosity;
-  materialProperties["Matrix Permeability Curve Inflection Damage"] = m_permeabilityCurveInflectionDamage;
-	materialProperties["Matrix Permeability Alpha"] = m_permeabilityAlpha;
-	materialProperties["Matrix Max Permeability"] = m_maxPermeability;
 	materialProperties["Matrix Permeability"] = m_permeabilityScalar;
   materialProperties["Material Dupicate Critical Stretch"] = m_criticalStretch;
 
