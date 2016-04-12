@@ -145,7 +145,8 @@ void computePhaseOneDensityInPores
 (
   ScalarT* phaseOneDensityInPores,
   const ScalarT* porePressureYOVerlap,
-  const double* deltaTemperature
+  const double* deltaTemperature,
+  int numOwnedPoints
 );
 
 template<typename ScalarT>
@@ -153,7 +154,8 @@ void computePhaseOneDensityInFracture
 (
   ScalarT* phaseOneDensityInFracture,
   const ScalarT* fracturePRessureYOverlap,
-  const double* deltaTemperature
+  const double* deltaTemperature,
+  int numOwnedPoints
 );
 
 }

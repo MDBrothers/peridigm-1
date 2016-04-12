@@ -353,7 +353,7 @@ template void computeFracturePorosity<std::complex<double> >
 
   for(int p=0; p<numOwnedPoints;p++, thetaLocal++, thetaCritical++, fracturePorosity++){
     *fracturePorosity = *thetaLocal - *thetaCritical;
-    if(std::real(*fracturePorosity) < 0.0) *fracturePorosity = std::complex(0.0, std::imag(*fracturePorosity)); //No negative porosities.
+    if(std::real(*fracturePorosity) < 0.0) *fracturePorosity = std::complex(0.0, std::imag(*fracturePorosity)); //No negative porosities, but preserve imaginary component.
   }
 }
 
@@ -373,31 +373,77 @@ void computePhaseOneDensityInPores
   const ScalarT* porePressureYOVerlap,
   const double* deltaTemperature,
   int numOwnedPoints
-)
-//Please see the following code. (pressure [Pa], Temperature [K], density: water density [kg/m3], enthalpy: water enthalpy [J/kg], internalEnergy: water internal energy[J/kg])
-inline void get_water_prop_2comp_simple_peri(double Pressure, double Temperature,  double &density, double &enthalpy, double &internalEnergy)
-{
-	double P;
-	double dtemp, dtemp2;
+){
+// (pressure [Pa], Temperature [K], density: water density [kg/m3])
+  ScalarT* densityOwned = phaseOneDensityInPores;
+  const ScalarT* pressureOwned = porePressureYOVerlap;
+  const double* temperatureOwned = deltaTemperature;
 
-	P = Pressure*1.0e-6;
-	dtemp = P*P;
-	dtemp2 = Temperature*Temperature;
+  for(int p=0; p<numOwnedPoints; p++, densityOwned++, pressureOwned++, temperatureOwned++){
+    double P = (*pressureOwned)*1.0e-6;
+    double pressSquared = P*P;
+    double tempSquared = (*temperatureOwned)*(*temperatureOwned);
 
-	density = (-0.00000014569010515*dtemp + 0.000046724532297*P - 0.0061488874609)*dtemp2
-		+ (0.000088493144499*dtemp - 0.029002566308*P + 3.3982146161)*Temperature
-		- 0.013875092279*dtemp + 4.9439957018*P + 530.4110022;
-	//density = 1000*(1+5e-10*(Pressure-0.1e+6));
-	//density = 1000;
-	enthalpy = (-0.00021992452509*dtemp + 0.037121520627*P - 0.62144893236)*dtemp2 + (0.14041054093*dtemp - 24.86452127*P + 4549.1148295)*Temperature - 22.685476185*dtemp + 5039.7750745*P - 1196243.3551;
-	internalEnergy = enthalpy - Pressure / density;
-	//internalEnergy = enthalpy;
+    // Empirical relation supplied to the developer by Ouichi Hisanao
+	  *densityOwned = (-0.00000014569010515*pressSquared + 0.000046724532297*P - 0.0061488874609)*tempSquared
+		+ (0.000088493144499*pressSquared - 0.029002566308*P + 3.3982146161)*Temperature
+		- 0.013875092279*pressSquared + 4.9439957018*P + 530.4110022;
+  }
 }
+
+template void computePhaseOneDensityInPores<double>
+(
+  double* phaseOneDensityInPores,
+  const double* porePressureYOVerlap,
+  const double* deltaTemperature,
+  int numOwnedPoints
+);
+
+template void computePhaseOneDensityInPores<std::complex<double> >
+(
+  std::complex<double>* phaseOneDensityInPores,
+  const std::complex<double>* porePressureYOVerlap,
+  const double* deltaTemperature,
+  int numOwnedPoints
+);
 
 template<typename ScalarT>
 void computePhaseOneDensityInFracture
 (
   ScalarT* phaseOneDensityInFracture,
   const ScalarT* fracturePRessureYOverlap,
-  const double* deltaTemperature
+  const double* deltaTemperature,
+  int numOwnedPoints
+){
+// (pressure [Pa], Temperature [K], density: water density [kg/m3])
+  ScalarT* densityOwned = phaseOneDensityInFracture;
+  const ScalarT* pressureOwned = fracturePRessureYOverlap;
+  const double* temperatureOwned = deltaTemperature;
+
+  for(int p=0; p<numOwnedPoints; p++, densityOwned++, pressureOwned++, temperatureOwned++){
+    double P = (*pressureOwned)*1.0e-6;
+    double pressSquared = P*P;
+    double tempSquared = (*temperatureOwned)*(*temperatureOwned);
+
+    // Empirical relation supplied to the developer by Ouichi Hisanao
+	  *densityOwned = (-0.00000014569010515*pressSquared + 0.000046724532297*P - 0.0061488874609)*tempSquared
+		+ (0.000088493144499*pressSquared - 0.029002566308*P + 3.3982146161)*Temperature
+		- 0.013875092279*pressSquared + 4.9439957018*P + 530.4110022;
+  }
+}
+
+template void computePhaseOneDensityInFracture<double>
+(
+  double* phaseOneDensityInFracture,
+  const double* fracturePRessureYOverlap,
+  const double* deltaTemperature,
+  int numOwnedPoints
+);
+
+template void computePhaseOneDensityInFracture<std::complex<double> >
+(
+  std::complex<double> * phaseOneDensityInFracture,
+  const std::complex<double> * fracturePRessureYOverlap,
+  const double* deltaTemperature,
+  int numOwnedPoints
 );
