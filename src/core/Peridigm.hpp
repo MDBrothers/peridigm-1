@@ -640,9 +640,6 @@ namespace PeridigmNS {
     int fracturePressureUFieldId;
     int fracturePressureVFieldId;
 
-    int matrixPorosityFieldId;
-    int fracturePorosityFieldId;
-
     int phaseOneSaturationPoresYFieldId;
     int phaseOneSaturationPoresUFieldId;
     int phaseOneSaturationPoresVFieldId;
@@ -651,6 +648,11 @@ namespace PeridigmNS {
     int phaseOneSaturationFracUFieldId;
     int phaseOneSaturationFracVFieldId;
     int phaseOneSaturationFracIncrementFieldId;
+
+    int matrixPorosityFieldId;
+    int fracturePorosityFieldId;
+    int phaseOneDensityInPoresFieldId;
+    int phaseOneDensityInFractureFieldId;
 
     int phaseOnePoreFlowDensityFieldId;
     int phaseOnePoreExternalFlowDensityFieldId;
