@@ -101,9 +101,14 @@ void computeInternalFlow
   const double *principleDamageDirectionOwned = principleDamageDirection;
 
   const ScalarT *matrixPorosityOwnedNP1 = matrixPorosityNP1;
-  const ScalarT *matrixPorosityOwnedN = matrixPorosityN;
-  const ScalarT *matrixPorosityOwnedNP1 = fracturePorosityNP1;
-  const ScalarT *matrixPorosityOwnedN = fracturePorosityN;
+  const double *matrixPorosityOwnedN = matrixPorosityN;
+  const ScalarT *fracturePorosityOwnedNP1 = fracturePorosityNP1;
+  const double *fracturePorosityOwnedN = fracturePorosityN;
+
+	const ScalarT* phaseOneDensityInPoresOwnedNP1 = phaseOneDensityInPoresNP1;
+	const double* phaseOneDensityInPoresOwnedN = phaseOneDensityInPoresN;
+	const ScalarT* phaseOneDensityInFractureOwnedNP1 = phaseOneDensityInFractureNP1;
+	const double* phaseOneDensityInFractureOwnedN = phaseOneDensityInFractureN;
 
   const ScalarT *thetaLocal = breaklessDilatation;
   ScalarT *phaseOnePoreFlowOwned = phaseOnePoreFlowOverlap;
@@ -124,6 +129,8 @@ void computeInternalFlow
                                     principleDamageDirectionOwned +=3,
                                     matrixPorosityOwnedNP1++, fracturePorosityOwnedNP1++,
                                     matrixPorosityOwnedN++, fracturePorosityOwnedN++,
+																		phaseOneDensityInFractureOwnedNP1++, phaseOneDensityInPoresOwnedNP1++,
+																		phaseOneDensityInFractureOwnedN++, phaseOneDensityInPoresOwnedN++,
                                     porePressureVOwned++, fracturePressureVOwned++){
     int numNeigh = *neighPtr; neighPtr++;
     double selfCellVolume = v[p];
@@ -168,8 +175,8 @@ void computeInternalFlow
 
       // compute flow density
       // flow entering cell is positive
-      scalarPhaseOnePoreFlow = omegaPores * m_phaseOneDensity / m_phaseOneViscosity * m_permeabilityScalar / pow(dY, 4.0) * dPorePressure;
-      scalarPhaseOneFracFlow = omegaFrac * m_phaseOneDensity / (2.0 * m_phaseOneViscosity) * phaseOneFracPerm / pow(dY, 2.0) * dFracPressure;
+      scalarPhaseOnePoreFlow = omegaPores * (*phaseOneDensityInPoresOwnedNP1) / m_phaseOneViscosity * m_permeabilityScalar / pow(dY, 4.0) * dPorePressure;
+      scalarPhaseOneFracFlow = omegaFrac * (*phaseOneDensityInFractureOwnedNP1) / (2.0 * m_phaseOneViscosity) * phaseOneFracPerm / pow(dY, 2.0) * dFracPressure;
 
       // convert flow density to flow and account for reactions
       *phaseOnePoreFlowOwned += scalarPhaseOnePoreFlow*cellVolume;
@@ -179,8 +186,8 @@ void computeInternalFlow
     }
 
     //Add in viscous and leakoff terms from mass conservation equation
-    *phaseOnePoreFlowOwned = *phaseOnePoreFlowOwned - selfCellVolume*m_phaseOneDensity*(*matrixPorosityNP1 - *matrixPorosityN)/deltaTime + selfCellVolume * m_permeabilityScalar * 4.0*M_PI*m_horizon_fracture*m_horizon_fracture * dFracMinusPorePress / (selfCellVolume*(1.0 + *thetaLocal)*m_phaseOneViscosity*(m_horizon/2.0));
-    *phaseOneFracFlowOwned = *phaseOneFracFlowOwned - selfCellVolume*m_phaseOneDensity*(*fracturePorosityNP1 - *fracturePorosityN)/deltaTime - selfCellVolume * m_permeabilityScalar * 4.0*M_PI*m_horizon_fracture*m_horizon_fracture * dFracMinusPorePress / (selfCellVolume*(1.0 + *thetaLocal)*m_phaseOneViscosity*(m_horizon/2.0));
+    *phaseOnePoreFlowOwned = *phaseOnePoreFlowOwned -((*phaseOneDensityInPoresOwnedNP1)*(*matrixPorosityNP1) - (*phaseOneDensityInPoresOwnedN)*(*matrixPorosityN))/deltaTime + m_permeabilityScalar*4.0*M_PI*m_horizon_fracture*m_horizon_fracture*dFracMinusPorePress / (selfCellVolume*(1.0 + *thetaLocal)*m_phaseOneViscosity*(m_horizon/2.0));
+    *phaseOneFracFlowOwned = *phaseOneFracFlowOwned -((*phaseOneDensityInFractureOwnedNP1)*(*fracturePorosityNP1) - (*phaseOneDensityInFractureOwnedN)*(*fracturePorosityN))/deltaTime - m_permeabilityScalar*4.0*M_PI*m_horizon_fracture*m_horizon_fracture*dFracMinusPorePress / (selfCellVolume*(1.0 + *thetaLocal)*m_phaseOneViscosity*(m_horizon/2.0));
   }
 }
 
