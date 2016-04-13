@@ -50,7 +50,7 @@
 #include "Peridigm_CriticalStretchDamageModel.hpp"
 #include "Peridigm_UserDefinedTimeDependentCriticalStretchDamageModel.hpp"
 #include "Peridigm_InterfaceAwareDamageModel.hpp"
-#include "Peridigm_TwoPhaseMultiphysicsCriticalStretchDamageModel.hpp"
+#include "Peridigm_FractureSpaceCriticalStretchDamageModel.hpp"
 
 using namespace std;
 
@@ -66,15 +66,15 @@ PeridigmNS::DamageModelFactory::create(const Teuchos::ParameterList& damageModel
   else if(damageModelName == "Interface Aware")
     damageModel = Teuchos::rcp( new InterfaceAwareDamageModel(damageModelParams) );
   else if(damageModelName == "Time Dependent Critical Stretch")
-    damageModel = Teuchos::rcp( new UserDefinedTimeDependentCriticalStretchDamageModel(damageModelParams) );  
-  else if(damageModelName == "Two Phase Multiphysics Critical Stretch")
-    damageModel = Teuchos::rcp( new TwoPhaseMultiphysicsCriticalStretchDamageModel(damageModelParams) );  
+    damageModel = Teuchos::rcp( new UserDefinedTimeDependentCriticalStretchDamageModel(damageModelParams) );
+  else if(damageModelName == "Fracture Space Critical Stretch")
+    damageModel = Teuchos::rcp( new FractureSpaceCriticalStretchDamageModel(damageModelParams) );
   else {
     string invalidDamageModel("\n**** Unrecognized damage model type: ");
     invalidDamageModel += damageModelName;
     invalidDamageModel += ", must be \"Critical Stretch\", \"Two Phase Multiphysics Critical Stretch\", \"Time Dependent Critical Stretch\" or \"Interface Aware\".\n";
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, invalidDamageModel);
   }
-  
+
   return damageModel;
 }

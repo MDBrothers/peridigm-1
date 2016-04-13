@@ -309,8 +309,8 @@ void computeMatrixPorosity
   const ScalarT* thetaMatrixLocalN = dilatationN;
 
   for(int p=0; p<numOwnedPoints; p++,  phiMatrixNP1++, phiMatrixN++, porePressureYOwnedNP1++, porePressureYOwnedN++, thetaMatrixLocalNP1++, thetaMatrixLocalN++){
-    *phiMatrixNP1 = (*phiMatrixN)*(1.0 - compressibilityRock*(*porePressureYOwnedNP1 - *porePressureYOwnedN)) +
-                    alpha*(1.0 + *thetaMatrixLocalN)*(compressibilityRock*(*porePressureYOwnedNP1 - *porePressureYOwnedN) + (*thetaMatrixLocalNP1 - *thetaMatrixLocalN));
+    *phiMatrixNP1 = (*phiMatrixN)*(1.0 - m_compressibilityRock*(*porePressureYOwnedNP1 - *porePressureYOwnedN)) +
+                    m_alpha*(1.0 + *thetaMatrixLocalN)*(m_compressibilityRock*(*porePressureYOwnedNP1 - *porePressureYOwnedN) + (*thetaMatrixLocalNP1 - *thetaMatrixLocalN));
   }
 }
 

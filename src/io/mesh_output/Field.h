@@ -81,6 +81,7 @@ enum Type {
   DILATATION,
   DAMAGE,
   CRITICAL_STRETCH,
+  FRACTURE_CONNECTED,
   E_DP,
   E_DB,
   PLASTIC_CONSISTENCY,
@@ -275,40 +276,31 @@ const Field_NS::FieldSpec GLOBAL_ANGULAR_MOMENTUM(Field_ENUM::ANGULAR_MOMENTUM, 
  */
 const Field_NS::FieldSpec MATRIX_POROSITY (Field_ENUM::MATRIX_POROSITY,  Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Matrix_Porosity");
 const Field_NS::FieldSpec FRACTURE_POROSITY (Field_ENUM::FRACTURE_POROSITY,  Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Fracture_Porosity");
-
 const Field_NS::FieldSpec PHASE_1_SATURATION_PORES_Y (Field_ENUM::PHASE_1_SATURATION_PORES_Y,  Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_1_Saturation_Pores_Y");
 const Field_NS::FieldSpec PHASE_1_SATURATION_PORES_U (Field_ENUM::PHASE_1_SATURATION_PORES_U,  Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_1_Saturations_Pores_U");
 const Field_NS::FieldSpec PHASE_1_SATURATION_PORES_V (Field_ENUM::PHASE_1_SATURATION_PORES_V,  Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_1_Saturation_Pores_U");
-
 const Field_NS::FieldSpec PHASE_1_SATURATION_FRACTURE_Y (Field_ENUM::PHASE_1_SATURATION_FRACTURE_Y,  Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_1_Saturation_Frac_Y");
 const Field_NS::FieldSpec PHASE_1_SATURATION_FRACTURE_U (Field_ENUM::PHASE_1_SATURATION_FRACTURE_U,  Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_1_Saturation_Frac_U");
 const Field_NS::FieldSpec PHASE_1_SATURATION_FRACTURE_V (Field_ENUM::PHASE_1_SATURATION_FRACTURE_V,  Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_1_Saturation_Frac_V");
-
-const Field_NS::FieldSpec PHASE_1_DENSITY_IN_PORES (Field_ENUM::PHASE_1_DENSITY_IN_PORES,  Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "PHASE_1_DENSITY_IN_PORES");
-const Field_NS::FieldSpec PHASE_1_DENSITY_IN_FRACTURE (Field_ENUM::PHASE_1_DENSITY_IN_FRACTURE,  Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "PHASE_1_DENSITY_IN_FRACTURE");
-
+const Field_NS::FieldSpec PHASE_1_DENSITY_IN_PORES (Field_ENUM::PHASE_1_DENSITY_IN_PORES,  Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_1_Density_In_Pores");
+const Field_NS::FieldSpec PHASE_1_DENSITY_IN_FRACTURE (Field_ENUM::PHASE_1_DENSITY_IN_FRACTURE,  Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_1_Density_In_Fracture");
 const Field_NS::FieldSpec PORE_PRESSURE_Y(Field_ENUM::PORE_PRESSURE_Y,      Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Pore_Pressure_Y");
 const Field_NS::FieldSpec PORE_PRESSURE_U(Field_ENUM::PORE_PRESSURE_U,      Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Pore_Pressure_U");
 const Field_NS::FieldSpec PORE_PRESSURE_V(Field_ENUM::PORE_PRESSURE_V,      Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Pore_Pressure_V");
-
 const Field_NS::FieldSpec FRACTURE_PRESSURE_Y(Field_ENUM::FRACTURE_PRESSURE_Y,      Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Frac_Pressure_Y");
 const Field_NS::FieldSpec FRACTURE_PRESSURE_U(Field_ENUM::FRACTURE_PRESSURE_U,      Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Frac_Pressure_U");
 const Field_NS::FieldSpec FRACTURE_PRESSURE_V(Field_ENUM::FRACTURE_PRESSURE_V,      Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Frac_Pressure_V");
-
 const Field_NS::FieldSpec PHASE_1_PORE_FLOW            (Field_ENUM::PHASE_1_PORE_FLOW,                  Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_1_Pore_Flow");
 const Field_NS::FieldSpec PHASE_1_PORE_FLOW_DENSITY    (Field_ENUM::PHASE_1_PORE_FLOW_DENSITY,          Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_1_Pore_Flow_Density");
-
 const Field_NS::FieldSpec PHASE_1_FRACTURE_FLOW            (Field_ENUM::PHASE_1_FRACTURE_FLOW,                  Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_1_Frac_Flow");
 const Field_NS::FieldSpec PHASE_1_FRACTURE_FLOW_DENSITY    (Field_ENUM::PHASE_1_FRACTURE_FLOW_DENSITY,          Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_1_Frac_Flow_Density");
-
 const Field_NS::FieldSpec PHASE_2_PORE_FLOW            (Field_ENUM::PHASE_2_PORE_FLOW,                  Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_2_Pore_Flow");
 const Field_NS::FieldSpec PHASE_2_PORE_FLOW_DENSITY    (Field_ENUM::PHASE_2_PORE_FLOW_DENSITY,          Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_2_Pore_Flow_Density");
-
 const Field_NS::FieldSpec PHASE_2_FRACTURE_FLOW            (Field_ENUM::PHASE_2_FRACTURE_FLOW,                  Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_2_Frac_Flow");
 const Field_NS::FieldSpec PHASE_2_FRACTURE_FLOW_DENSITY    (Field_ENUM::PHASE_2_FRACTURE_FLOW_DENSITY,          Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Phase_2_Frac_Flow_Density");
-
 const Field_NS::FieldSpec FRACTURE_WIDTH (Field_ENUM::FRACTURE_WIDTH,  Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Frac_Width");
 const Field_NS::FieldSpec FRACTURE_DAMAGE_PRINCIPLE_DIRECTION (Field_ENUM::FRACTURE_DAMAGE_PRINCIPLE_DIRECTION,  Field_ENUM::ELEMENT, Field_ENUM::VECTOR3D, Field_ENUM::TWO_STEP, "Frac_Damage_Principle_Direction");
+const Field_NS::FieldSpec FRACTURE_CONNECTED (Field_ENUM::FRACTURE_CONNECTED, Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Fracture_Connected");
 
 /*
  * ELEMENT SCALAR FieldSpecs (scalar fields defined over elements)
@@ -397,6 +389,7 @@ struct FieldSpecMap {
     mymap[PHASE_2_FRACTURE_FLOW.getLabel()]        = PHASE_2_FRACTURE_FLOW;
     mymap[PHASE_2_FRACTURE_FLOW_DENSITY.getLabel()]= PHASE_2_FRACTURE_FLOW_DENSITY;
     mymap[FRACTURE_WIDTH.getLabel()]               = FRACTURE_WIDTH;
+    mymap[FRACTURE_CONNECTED.getLabel()]           = FRACTURE_CONNECTED;
     mymap[VOLUME.getLabel()]                       = VOLUME;
     mymap[DENSITY.getLabel()]                      = DENSITY;
     mymap[GID.getLabel()]                          = GID;

@@ -81,6 +81,11 @@ PeridigmNS::OnePhaseMultiphysicsElasticMaterial::OnePhaseMultiphysicsElasticMate
     m_surfaceCorrectionFactorFieldId(-1),
     m_deltaTemperatureFieldId(-1),
     m_fractureDamagePrincipleDirectionFieldId(-1),
+    m_matrixPorosityFieldId(-1),
+    m_fracturePorosityFieldId(-1),
+    m_phaseOneDensityInPoresFieldId(-1),
+    m_phaseOneDensityInFractureFieldId(-1),
+    m_fractureConnectedFieldId(-1),
     m_porePressureYFieldId(-1),
     m_porePressureVFieldId(-1),
     m_fracturePressureYFieldId(-1),
@@ -146,6 +151,11 @@ PeridigmNS::OnePhaseMultiphysicsElasticMaterial::OnePhaseMultiphysicsElasticMate
   m_fracturePressureVFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Frac_Pressure_V");
   m_phaseOnePoreFlowDensityFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Phase_1_Pore_Flow_Density");
   m_phaseOneFracFlowDensityFieldId  = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Phase_1_Frac_Flow_Density");
+  m_matrixPorosityFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Matrix_Porosity");
+  m_fracturePorosityFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Fracture_Porosity");
+  m_phaseOneDensityInPoresFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Phase_1_Density_In_Pores");
+  m_phaseOneDensityInFractureFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Phase_1_Density_In_Fracture");
+  m_fractureConnectedFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Fracture_Connected");
 
   if(m_applyThermalStrains)
     m_deltaTemperatureFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Temperature_Change");

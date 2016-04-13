@@ -228,7 +228,8 @@ namespace PeridigmNS {
 	int m_phaseOneDensityInFractureFieldId;
 	int m_matrixPorosityFieldId;
 	int m_fracturePorosityFieldId;
-
+  int m_fractureConnectedFieldId;
+  
 	double m_permeabilityScalar;
   double m_phaseOneCompressibility;
   double m_phaseOneViscosity;

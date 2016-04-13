@@ -71,7 +71,7 @@
 #include "Peridigm_MaterialFactory.hpp"
 #include "Peridigm_DamageModelFactory.hpp"
 #include "Peridigm_InterfaceAwareDamageModel.hpp"
-#include "Peridigm_TwoPhaseMultiphysicsCriticalStretchDamageModel.hpp"
+#include "Peridigm_FractureSpaceCriticalStretchDamageModel.hpp"
 #include "Peridigm_UserDefinedTimeDependentCriticalStretchDamageModel.hpp"
 #include "Peridigm.hpp"
 #include "correspondence.h" // For Invert3by3Matrix
@@ -121,10 +121,10 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     contactForceDensityFieldId(-1),
     externalForceDensityFieldId(-1),
     partialVolumeFieldId(-1),
-    matrixPorosityFieldId(-1),
-    fracturePorosityFieldId(-1),
-		phaseOneDensityInPoresFieldId(-1),
-		phaseOneDensityInFractureFieldId(-1),
+    //matrixPorosityFieldId(-1),
+    //fracturePorosityFieldId(-1),
+		//phaseOneDensityInPoresFieldId(-1),
+		//phaseOneDensityInFractureFieldId(-1),
     phaseOneSaturationPoresYFieldId(-1),
     phaseOneSaturationPoresUFieldId(-1),
     phaseOneSaturationPoresVFieldId(-1),
@@ -466,8 +466,8 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
         CSDamageModel = Teuchos::rcp_dynamic_cast< PeridigmNS::UserDefinedTimeDependentCriticalStretchDamageModel >(damageModel);
         CSDamageModel->evaluateParserDmg(currentValue, previousValue, timeCurrent, timePrevious);
       }
-      else if(damageModel->Name() =="Two Phase Multiphysics Critical Stretch"){
-        Teuchos::RCP< PeridigmNS::TwoPhaseMultiphysicsCriticalStretchDamageModel > TPMPCSDamageModel = Teuchos::rcp_dynamic_cast< PeridigmNS::TwoPhaseMultiphysicsCriticalStretchDamageModel >(damageModel);
+      else if(damageModel->Name() =="Fracture Space Critical Stretch"){
+        Teuchos::RCP< PeridigmNS::FractureSpaceCriticalStretchDamageModel > TPMPCSDamageModel = Teuchos::rcp_dynamic_cast< PeridigmNS::FractureSpaceCriticalStretchDamageModel >(damageModel);
         TPMPCSDamageModel->setBCManager(boundaryAndInitialConditionManager);
       }
     }
