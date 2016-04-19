@@ -47,10 +47,12 @@
 
 #include "Peridigm_OnePhaseMultiphysicsElasticMaterial.hpp"
 #include "Peridigm_Field.hpp"
-#include "one_phase_nonlocal_diffusion.h"
-#include "two_phase_nonlocal_diffusion.h"
 
+#include "poroelastic.hpp"
+#include "diffusion_models.hpp"
+#include "damage_model_dependent_utilities.hpp>"
 #include "material_utilities.h"
+
 #include <Teuchos_Assert.hpp>
 #include <Epetra_SerialComm.h>
 #include <Sacado.hpp>

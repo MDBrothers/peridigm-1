@@ -229,7 +229,7 @@ namespace PeridigmNS {
 	int m_matrixPorosityFieldId;
 	int m_fracturePorosityFieldId;
   int m_fractureConnectedFieldId;
-  
+
 	double m_permeabilityScalar;
   double m_phaseOneCompressibility;
   double m_phaseOneViscosity;
@@ -239,4 +239,4 @@ namespace PeridigmNS {
   };
 }
 
-#endif // PERIDIGM_OnePhaseMULTIPHYSICSELASTICMATERIAL_HPP
+#endif // PERIDIGM_ONEPHASEMULTIPHYSICSELASTICMATERIAL_HPP

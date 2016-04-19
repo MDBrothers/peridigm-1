@@ -51,7 +51,6 @@
 #include "material_utilities.h"
 #include <boost/math/special_functions/fpclassify.hpp>
 
-
 namespace MATERIAL_EVALUATION {
 
 template<typename ScalarT>
