@@ -477,7 +477,7 @@ namespace MATERIAL_EVALUATION {
   }
 
   namespace TWO_PHASE{
-    
+
     template<typename ScalarT>
     void computeInternalFlow
     (
