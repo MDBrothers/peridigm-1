@@ -255,14 +255,13 @@ template void computeInternalFlow<Sacado::Fad::DFad<double> >
   const double* deltaTemperature
 );
 
-/** Explicit template instantiation for std::complex<double>. */
-template void computeInternalFlow<std::complex<double> >
+template void computeInternalFlowComplex
 (
   const std::complex<double> * yOverlap,
   const std::complex<double> * porePressureYOverlap,
-  const double* porePressureVOverlap,
+  const std::complex<double> * porePressureVOverlap,
   const std::complex<double> * fracturePressureYOverlap,
-  const double* fracturePressureVOverlap,
+  const std::complex<double> * fracturePressureVOverlap,
   const double* volumeOverlap,
   const double* damage,
   const double* principleDamageDirection,
@@ -274,7 +273,7 @@ template void computeInternalFlow<std::complex<double> >
 	const double * phaseOneDensityInPoresN,
 	const std::complex<double> * phaseOneDensityInFractureNP1,
 	const double * phaseOneDensityInFractureN,
-  const ScalarT* breaklessDilatation,
+  const std::complex<double>* breaklessDilatation,
   std::complex<double> * phaseOnePoreFlowOverlap,
   std::complex<double> * phaseOneFracFlowOverlap,
   const int*  localNeighborList,
@@ -349,7 +348,6 @@ void computeFracturePorosity
   ScalarT* fracturePorosityNP1,
   const ScalarT* breaklessDilatationOwnedNP1,
   const double* criticalDilatationOwned,
-  const int* localNeighborList,
   int numOwnedPoints
 ){
   const ScalarT* thetaLocal = breaklessDilatationOwnedNP1; //The definition of local dilatation from Hisanao's formulation matches the standard definition of dilatation without a damage model.
@@ -393,13 +391,13 @@ template<typename ScalarT>
 void computePhaseOneDensityInPores
 (
   ScalarT* phaseOneDensityInPores,
-  const ScalarT* porePressureYOVerlap,
+  const ScalarT* porePressureYOverlap,
   const double* deltaTemperature,
   int numOwnedPoints
 ){
 // (pressure [Pa], Temperature [K], density: water density [kg/m3])
   ScalarT* densityOwned = phaseOneDensityInPores;
-  const ScalarT* pressureOwned = porePressureYOVerlap;
+  const ScalarT* pressureOwned = porePressureYOverlap;
   const double* temperatureOwned = deltaTemperature;
 
   for(int p=0; p<numOwnedPoints; p++, densityOwned++, pressureOwned++, temperatureOwned++){
@@ -417,7 +415,7 @@ void computePhaseOneDensityInPores
 template void computePhaseOneDensityInPores<double>
 (
   double* phaseOneDensityInPores,
-  const double* porePressureYOVerlap,
+  const double* porePressureYOverlap,
   const double* deltaTemperature,
   int numOwnedPoints
 );
@@ -425,7 +423,7 @@ template void computePhaseOneDensityInPores<double>
 template void computePhaseOneDensityInPores<std::complex<double> >
 (
   std::complex<double>* phaseOneDensityInPores,
-  const std::complex<double>* porePressureYOVerlap,
+  const std::complex<double>* porePressureYOverlap,
   const double* deltaTemperature,
   int numOwnedPoints
 );
