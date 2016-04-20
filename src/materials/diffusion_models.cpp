@@ -49,6 +49,7 @@
 #include <Sacado.hpp>
 #include "diffusion_models.hpp"
 #include "material_utilities.h"
+#include <boost/math/constants/constants.hpp>
 #include <boost/math/special_functions/fpclassify.hpp>
 
 namespace MATERIAL_EVALUATION {
@@ -201,8 +202,8 @@ namespace MATERIAL_EVALUATION {
       double cellVolume, harmonicAverageDamage;
       ScalarT phaseOnePorePerm,  dPorePressure, dFracPressure;
       ScalarT dFracMinusPorePress, Y_dx, Y_dy, Y_dz, dY, fractureWidthFactor;
-      ScalarT fractureDirectionFactor, phaseOneFracPerm, phaseOneRelPermPores,
-      ScalarT scalarPhaseOnePoreFlow, scalarPhaseOneFracFlow, phaseOneRelPermFrac;
+      ScalarT fractureDirectionFactor, phaseOneFracPerm;
+      ScalarT scalarPhaseOnePoreFlow, scalarPhaseOneFracFlow;
       ScalarT scalarPhaseOneFracToPoreFlow, omegaPores, omegaFrac;
 
       for(int p=0;p<numOwnedPoints;p++, porePressureYOwned++, fracturePressureYOwned++,
@@ -252,14 +253,22 @@ namespace MATERIAL_EVALUATION {
 
           // compute permeabilities
           // Frac permeability in directions other than orthogonal to the principle damage direction is strongly attenuated.
-          fractureDirectionFactor = pow(cos(Y_dx*(*(principleDamageDirection+0)) + Y_dy*(*(principleDamageDirection+1)) + Y_dz*(*(principleDamageDirection+2))),2.0); //Frac flow allowed in direction perpendicular to damage
+          //fractureDirectionFactor = pow(cos(Y_dx*(*(principleDamageDirection+0)) + Y_dy*(*(principleDamageDirection+1)) + Y_dz*(*(principleDamageDirection+2))),2.0); //Frac flow allowed in direction perpendicular to damage
           // Frac permeability is affected by bond allignment with fracture plane, width, and saturation
-          phaseOneFracPerm = fractureWidthFactor*fractureDirectionFactor;
+          phaseOneFracPerm = fractureWidthFactor;//*fractureDirectionFactor;
+          
+          /*
+            Nonlocal permeability istropic tensor evaluation result
+          */
+          phaseOnePorePerm = dY*dY*m_permeabilityScalar/4.0;
+
+          const double CORR_FACTOR_FRACTURE = 45.0/(4.0*boost::math::constants::pi<double>()*m_horizon_fracture*m_horizon_fracture*m_horizon_fracture);
+          const double CORR_FACTOR_PORES = 45.0/(4.0*boost::math::constants::pi<double>()*m_horizon*m_horizon*m_horizon);
 
           // compute flow density
           // flow entering cell is positive
-          scalarPhaseOnePoreFlow = omegaPores * (*phaseOneDensityInPoresOwnedNP1) / m_phaseOneViscosity * m_permeabilityScalar / pow(dY, 4.0) * dPorePressure;
-          scalarPhaseOneFracFlow = omegaFrac * (*phaseOneDensityInFractureOwnedNP1) / (2.0 * m_phaseOneViscosity) * phaseOneFracPerm / pow(dY, 2.0) * dFracPressure;
+          scalarPhaseOnePoreFlow = omegaPores * CORR_FACTOR_PORES * (*phaseOneDensityInPoresOwnedNP1) / m_phaseOneViscosity * m_permeabilityScalar / pow(dY, 4.0) * dPorePressure;
+          scalarPhaseOneFracFlow = omegaFrac * CORR_FACTOR_FRACTURE * (*phaseOneDensityInFractureOwnedNP1) / (2.0 * m_phaseOneViscosity) * phaseOneFracPerm / pow(dY, 2.0) * dFracPressure;
 
           // convert flow density to flow and account for reactions
           *phaseOnePoreFlowOwned += scalarPhaseOnePoreFlow*cellVolume;
