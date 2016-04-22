@@ -68,14 +68,14 @@ namespace MATERIAL_EVALUATION {
     const double* temperatureOwned = deltaTemperature;
 
     for(int p=0; p<numOwnedPoints; p++, densityOwned++, pressureOwned++, temperatureOwned++){
-      double P = (*pressureOwned)*1.0e-6;
-      double pressSquared = P*P;
+      double pressureInMPa = (*pressureOwned)*1.0e-6;
+      double pressInMPaSquared = pressureInMPa*pressureInMPa;
       double tempSquared = (*temperatureOwned)*(*temperatureOwned);
 
       // Empirical relation supplied to the developer by Ouichi Hisanao
-  	  *densityOwned = (-0.00000014569010515*pressSquared + 0.000046724532297*P - 0.0061488874609)*tempSquared
-  		+ (0.000088493144499*pressSquared - 0.029002566308*P + 3.3982146161)*Temperature
-  		- 0.013875092279*pressSquared + 4.9439957018*P + 530.4110022;
+  	  *densityOwned = (-0.00000014569010515*pressInMPaSquared + 0.000046724532297*pressureInMPa - 0.0061488874609)*tempSquared
+  		+ (0.000088493144499*pressInMPaSquared - 0.029002566308*pressureInMPa + 3.3982146161)*Temperature
+  		- 0.013875092279*pressInMPaSquared + 4.9439957018*pressureInMPa + 530.4110022;
     }
   }
 
@@ -109,14 +109,14 @@ namespace MATERIAL_EVALUATION {
     const double* temperatureOwned = deltaTemperature;
 
     for(int p=0; p<numOwnedPoints; p++, densityOwned++, pressureOwned++, temperatureOwned++){
-      double P = (*pressureOwned)*1.0e-6;
-      double pressSquared = P*P;
+      double pressureInMPa = (*pressureOwned)*1.0e-6;
+      double pressInMPaSquared = pressureInMPa*pressureInMPa;
       double tempSquared = (*temperatureOwned)*(*temperatureOwned);
 
       // Empirical relation supplied to the developer by Ouichi Hisanao
-  	  *densityOwned = (-0.00000014569010515*pressSquared + 0.000046724532297*P - 0.0061488874609)*tempSquared
-  		+ (0.000088493144499*pressSquared - 0.029002566308*P + 3.3982146161)*Temperature
-  		- 0.013875092279*pressSquared + 4.9439957018*P + 530.4110022;
+  	  *densityOwned = (-0.00000014569010515*pressInMPaSquared + 0.000046724532297*pressureInMPa - 0.0061488874609)*tempSquared
+  		+ (0.000088493144499*pressInMPaSquared - 0.029002566308*pressureInMPa + 3.3982146161)*Temperature
+  		- 0.013875092279*pressInMPaSquared + 4.9439957018*pressureInMPa + 530.4110022;
     }
   }
 
@@ -201,7 +201,7 @@ namespace MATERIAL_EVALUATION {
       const int *neighPtr = localNeighborList;
       double cellVolume, harmonicAverageDamage;
       ScalarT phaseOnePorePerm,  dPorePressure, dFracPressure;
-      ScalarT dFracMinusPorePress, Y_dx, Y_dy, Y_dz, dY, fractureWidthFactor;
+      ScalarT dFracMinusPorePress, Y_dx, Y_dy, Y_dz, dY, fracWidth, fracPermeability;             // SA: fracWidth introduced
       ScalarT fractureDirectionFactor, phaseOneFracPerm;
       ScalarT scalarPhaseOnePoreFlow, scalarPhaseOneFracFlow;
       ScalarT scalarPhaseOneFracToPoreFlow, omegaPores, omegaFrac;
@@ -226,7 +226,8 @@ namespace MATERIAL_EVALUATION {
         const double *principleDamageDirection = principleDamageDirectionOwned;
 
         // Fracture permeability
-        fractureWidthFactor = (2.0*m_horizon*(*fracturePorosityOwnedNP1)*(2.0*m_horizon*(*fracturePorosityOwnedNP1)/12.0;//TODO change this to grid spacing from m_horizon
+        fracWidth = 2.0*m_horizon*(*fracturePorosityOwnedNP1);                   //TODO change this to grid spacing from m_horizon
+        fracPermeability = fracWidth*fracWidth/12.0;
 
         dFracMinusPorePress = *fracturePressureY - *porePressureY;
 
@@ -255,7 +256,7 @@ namespace MATERIAL_EVALUATION {
           // Frac permeability in directions other than orthogonal to the principle damage direction is strongly attenuated.
           //fractureDirectionFactor = pow(cos(Y_dx*(*(principleDamageDirection+0)) + Y_dy*(*(principleDamageDirection+1)) + Y_dz*(*(principleDamageDirection+2))),2.0); //Frac flow allowed in direction perpendicular to damage
           // Frac permeability is affected by bond allignment with fracture plane, width, and saturation
-          phaseOneFracPerm = fractureWidthFactor;//*fractureDirectionFactor;
+          phaseOneFracPerm = fracPermeability;//*fractureDirectionFactor;
 
           /*
             Nonlocal permeability istropic tensor evaluation result
@@ -409,7 +410,7 @@ namespace MATERIAL_EVALUATION {
       const int *neighPtr = localNeighborList;
       double cellVolume, harmonicAverageDamage;
       std::complex<double> phaseOnePorePerm,  dPorePressure, dFracPressure;
-      std::complex<double> dFracMinusPorePress, Y_dx, Y_dy, Y_dz, dY, fractureWidthFactor;
+      std::complex<double> dFracMinusPorePress, Y_dx, Y_dy, Y_dz, dY, fracPermeability;
       std::complex<double> fractureDirectionFactor, phaseOneFracPerm, phaseOneRelPermPores,
       std::complex<double> scalarPhaseOnePoreFlow, scalarPhaseOneFracFlow, phaseOneRelPermFrac;
       std::complex<double> scalarPhaseOneFracToPoreFlow, omegaPores, omegaFrac;
@@ -434,7 +435,8 @@ namespace MATERIAL_EVALUATION {
         const double *principleDamageDirection = principleDamageDirectionOwned;
 
         // Fracture permeability
-        fractureWidthFactor = (2.0*m_horizon*(*fracturePorosityOwnedNP1)*(2.0*m_horizon*(*fracturePorosityOwnedNP1)/12.0;
+        fracWidth = 2.0*m_horizon*(*fracturePorosityOwnedNP1);
+        fracPermeability = fracWidth*fracWidth/12.0;
 
         dFracMinusPorePress = *fracturePressureY - *porePressureY;
 
@@ -463,7 +465,7 @@ namespace MATERIAL_EVALUATION {
           // Frac permeability in directions other than orthogonal to the principle damage direction is strongly attenuated.
           fractureDirectionFactor = pow(cos(Y_dx*(*(principleDamageDirection+0)) + Y_dy*(*(principleDamageDirection+1)) + Y_dz*(*(principleDamageDirection+2))),2.0); //Frac flow allowed in direction perpendicular to damage
           // Frac permeability is affected by bond allignment with fracture plane, width, and saturation
-          phaseOneFracPerm = fractureWidthFactor*fractureDirectionFactor;
+          phaseOneFracPerm = fracPermeability*fractureDirectionFactor;
 
           // compute flow density
           // flow entering cell is positive
@@ -556,7 +558,7 @@ namespace MATERIAL_EVALUATION {
       const int *neighPtr = localNeighborList;
       double cellVolume, harmonicAverageDamage;
       ScalarT phaseOnePorePerm, phaseTwoPorePerm;
-      ScalarT dPorePressure, dFracPressure, dLocalPoreFracPressure, Y_dx, Y_dy, Y_dz, dY, fractureWidthFactor;
+      ScalarT dPorePressure, dFracPressure, dLocalPoreFracPressure, Y_dx, Y_dy, Y_dz, dY, fracPermeability;
       ScalarT fractureDirectionFactor, phaseOneFracPerm, phaseTwoFracPerm, phaseOneRelPermPores;
       ScalarT phaseOneRelPermFrac, phaseTwoRelPermPores, phaseTwoRelPermFrac, satStarPores, satStarFrac;
       ScalarT scalarPhaseOnePoreFlow, scalarPhaseOneFracFlow, scalarPhaseTwoPoreFlow, scalarPhaseTwoFracFlow;
@@ -593,14 +595,14 @@ namespace MATERIAL_EVALUATION {
 
         //compute fracture width based on a two sphere diameter difference. An ad-hoc relation.
         if(*thetaBreakless > 0.0){
-          fractureWidthFactor = pow(6.0/M_PI*selfCellVolume*(*thetaBreakless),1.0/3.0) - pow(6.0/M_PI*selfCellVolume*(*thetaCritical),1.0/3.0);
-          if(fractureWidthFactor < 0.0)
-            fractureWidthFactor = 0.0; //Closed fractures have no flow
+          fracPermeability = pow(6.0/M_PI*selfCellVolume*(*thetaBreakless),1.0/3.0) - pow(6.0/M_PI*selfCellVolume*(*thetaCritical),1.0/3.0);
+          if(fracPermeability < 0.0)
+            fracPermeability = 0.0; //Closed fractures have no flow
         }
         else
-          fractureWidthFactor = 0.0;
+          fracPermeability = 0.0;
 
-        fractureWidthFactor *= fractureWidthFactor/12.0; //Empirical relation for permeability
+        fracPermeability *= fracPermeability/12.0; //Empirical relation for permeability
 
         for(int n=0;n<numNeigh;n++,neighPtr++){
           int localId = *neighPtr;
@@ -632,8 +634,8 @@ namespace MATERIAL_EVALUATION {
           phaseOnePorePerm = m_permeabilityScalar*phaseOneRelPermPores + m_maxPermeability/(exp(-m_permeabilityAlpha*(harmonicAverageDamage - m_permeabilityCurveInflectionDamage))+1.0);
           phaseTwoPorePerm = m_permeabilityScalar*phaseTwoRelPermPores + m_maxPermeability/(exp(-m_permeabilityAlpha*(harmonicAverageDamage - m_permeabilityCurveInflectionDamage))+1.0);
           // Frac permeability is affected by bond allignment with fracture plane, width, and saturation
-          phaseOneFracPerm = fractureWidthFactor*fractureDirectionFactor*phaseOneRelPermFrac;
-          phaseTwoFracPerm = fractureWidthFactor*fractureDirectionFactor*phaseTwoRelPermFrac;
+          phaseOneFracPerm = fracPermeability*fractureDirectionFactor*phaseOneRelPermFrac;
+          phaseTwoFracPerm = fracPermeability*fractureDirectionFactor*phaseTwoRelPermFrac;
 
           // compute flow density
           // flow entering cell is positive
@@ -821,7 +823,7 @@ namespace MATERIAL_EVALUATION {
       const int *neighPtr = localNeighborList;
       double cellVolume, harmonicAverageDamage;
       std::complex<double> phaseOnePorePerm, phaseTwoPorePerm;
-      std::complex<double> dPorePressure, dFracPressure, dLocalPoreFracPressure, Y_dx, Y_dy, Y_dz, dY, fractureWidthFactor;
+      std::complex<double> dPorePressure, dFracPressure, dLocalPoreFracPressure, Y_dx, Y_dy, Y_dz, dY, fracPermeability;
       std::complex<double> fractureDirectionFactor, phaseOneFracPerm, phaseTwoFracPerm, phaseOneRelPermPores;
       std::complex<double> phaseOneRelPermFrac, phaseTwoRelPermPores, phaseTwoRelPermFrac, satStarPores, satStarFrac;
       std::complex<double> scalarPhaseOnePoreFlow, scalarPhaseOneFracFlow, scalarPhaseTwoPoreFlow, scalarPhaseTwoFracFlow;
@@ -858,14 +860,14 @@ namespace MATERIAL_EVALUATION {
 
         //compute fracture width based on a two sphere diameter difference. An ad-hoc relation.
         if(std::real(*thetaBreakless) > 0.0){
-          fractureWidthFactor = pow(6.0/M_PI*selfCellVolume*(*thetaBreakless),1.0/3.0) - pow(6.0/M_PI*selfCellVolume*(*thetaCritical),1.0/3.0);
-          if(std::real(fractureWidthFactor) < 0.0)
-            fractureWidthFactor = std::complex<double>(0.0, std::imag(fractureWidthFactor)); //Closed fractures have no real flow
+          fracPermeability = pow(6.0/M_PI*selfCellVolume*(*thetaBreakless),1.0/3.0) - pow(6.0/M_PI*selfCellVolume*(*thetaCritical),1.0/3.0);
+          if(std::real(fracPermeability) < 0.0)
+            fracPermeability = std::complex<double>(0.0, std::imag(fracPermeability)); //Closed fractures have no real flow
         }
         else
-          fractureWidthFactor = std::complex<double>(0.0, std::imag(fractureWidthFactor));
+          fracPermeability = std::complex<double>(0.0, std::imag(fracPermeability));
 
-        fractureWidthFactor *= fractureWidthFactor/12.0; //Empirical relation for permeability
+        fracPermeability *= fracPermeability/12.0; //Empirical relation for permeability
 
         for(int n=0;n<numNeigh;n++,neighPtr++){
           int localId = *neighPtr;
@@ -898,8 +900,8 @@ namespace MATERIAL_EVALUATION {
           phaseTwoPorePerm = m_permeabilityScalar*phaseTwoRelPermPores + m_maxPermeability/(exp(-m_permeabilityAlpha*(harmonicAverageDamage - m_permeabilityCurveInflectionDamage))+1.0);
 
           // Frac permeability is affected by bond allignment with fracture plane, width, and saturation
-          phaseOneFracPerm = fractureWidthFactor*fractureDirectionFactor*phaseOneRelPermFrac;
-          phaseTwoFracPerm = fractureWidthFactor*fractureDirectionFactor*phaseTwoRelPermFrac;
+          phaseOneFracPerm = fracPermeability*fractureDirectionFactor*phaseOneRelPermFrac;
+          phaseTwoFracPerm = fracPermeability*fractureDirectionFactor*phaseTwoRelPermFrac;
 
           // compute flow density
           // flow entering cell is positive
