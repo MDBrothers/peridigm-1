@@ -226,7 +226,7 @@ namespace MATERIAL_EVALUATION {
         const double *principleDamageDirection = principleDamageDirectionOwned;
 
         // Fracture permeability
-        fractureWidthFactor = (2.0*m_horizon*(*fracturePorosityOwnedNP1)*(2.0*m_horizon*(*fracturePorosityOwnedNP1)/12.0;
+        fractureWidthFactor = (2.0*m_horizon*(*fracturePorosityOwnedNP1)*(2.0*m_horizon*(*fracturePorosityOwnedNP1)/12.0;//TODO change this to grid spacing from m_horizon
 
         dFracMinusPorePress = *fracturePressureY - *porePressureY;
 
@@ -256,7 +256,7 @@ namespace MATERIAL_EVALUATION {
           //fractureDirectionFactor = pow(cos(Y_dx*(*(principleDamageDirection+0)) + Y_dy*(*(principleDamageDirection+1)) + Y_dz*(*(principleDamageDirection+2))),2.0); //Frac flow allowed in direction perpendicular to damage
           // Frac permeability is affected by bond allignment with fracture plane, width, and saturation
           phaseOneFracPerm = fractureWidthFactor;//*fractureDirectionFactor;
-          
+
           /*
             Nonlocal permeability istropic tensor evaluation result
           */
