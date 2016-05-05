@@ -200,6 +200,7 @@ namespace MATERIAL_EVALUATION {
 
       const int *neighPtr = localNeighborList;
       double cellVolume, harmonicAverageDamage;
+      ScalarT permeabilityXX, permeabilityYY, permeabilityZZ, permeabilityTrace;
       ScalarT phaseOnePorePerm,  dPorePressure, dFracPressure;
       ScalarT dFracMinusPorePress, Y_dx, Y_dy, Y_dz, dY, fracWidth, fracPermeability;             // SA: fracWidth introduced
       ScalarT fractureDirectionFactor, phaseOneFracPerm;
@@ -261,7 +262,10 @@ namespace MATERIAL_EVALUATION {
           /*
             Nonlocal permeability istropic tensor evaluation result
           */
-          phaseOnePorePerm = dY*dY*m_permeabilityScalar/4.0;
+          permeabilityTrace = (permeabilityXX + permeabilityYY + permeabilityZZ);
+          m_permeabilityScalar = (permeabilityXX - 0.25 * permeabilityTrace) * Y_dx * Y_dx
+                               + (permeabilityYY - 0.25 * permeabilityTrace) * Y_dy * Y_dy
+                               + (permeabilityZZ - 0.25 * permeabilityTrace) * Y_dz * Y_dz;
 
           const double CORR_FACTOR_FRACTURE = 45.0/(4.0*boost::math::constants::pi<double>()*m_horizon_fracture*m_horizon_fracture*m_horizon_fracture);
           const double CORR_FACTOR_PORES = 45.0/(4.0*boost::math::constants::pi<double>()*m_horizon*m_horizon*m_horizon);
@@ -557,6 +561,7 @@ namespace MATERIAL_EVALUATION {
 
       const int *neighPtr = localNeighborList;
       double cellVolume, harmonicAverageDamage;
+      ScalarT permeabilityXX, permeabilityYY, permeabilityZZ, permeabilityTrace;
       ScalarT phaseOnePorePerm, phaseTwoPorePerm;
       ScalarT dPorePressure, dFracPressure, dFracMinusPorePress, Y_dx, Y_dy, Y_dz, dY, fracPermeability;
       ScalarT fractureDirectionFactor, phaseOneFracPerm, phaseTwoFracPerm, phaseOneRelPermPores;
@@ -624,6 +629,14 @@ namespace MATERIAL_EVALUATION {
           // Pressure potential
           dPorePressure = *porePressureYP - *porePressureY;
           dFracPressure = *fracturePressureYP - *fracturePressureY;
+
+          /*
+            Nonlocal permeability istropic tensor evaluation result
+          */
+          permeabilityTrace = (permeabilityXX + permeabilityYY + permeabilityZZ);
+          m_permeabilityScalar = (permeabilityXX - 0.25 * permeabilityTrace) * Y_dx * Y_dx
+                               + (permeabilityYY - 0.25 * permeabilityTrace) * Y_dy * Y_dy
+                               + (permeabilityZZ - 0.25 * permeabilityTrace) * Y_dz * Y_dz;
 
           // compute permeabilities
           // Frac permeability in directions other than orthogonal to the principle damage direction is strongly attenuated.
