@@ -14,8 +14,9 @@ set(PD_MATERIAL_SOURCES
     isotropic_hardening_correspondence.cxx
     viscoplastic_needleman_correspondence.cxx
     material_utilities.cxx
-    two_phase_nonlocal_diffusion.cxx
-    one_phase_nonlocal_diffusion.cxx
+    diffusion_models.cpp
+    damage_model_dependent_utilities.cpp
+    poroelastic.cpp
     pals.cxx
 )
 

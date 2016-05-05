@@ -68,13 +68,13 @@ namespace MATERIAL_EVALUATION {
     const double* temperatureOwned = deltaTemperature;
 
     for(int p=0; p<numOwnedPoints; p++, densityOwned++, pressureOwned++, temperatureOwned++){
-      double pressureInMPa = (*pressureOwned)*1.0e-6;
-      double pressInMPaSquared = pressureInMPa*pressureInMPa;
+      const scalarT pressureInMPa = (*pressureOwned)*1.0e-6;
+      const scalarT pressInMPaSquared = pressureInMPa*pressureInMPa;
       double tempSquared = (*temperatureOwned)*(*temperatureOwned);
 
       // Empirical relation supplied to the developer by Ouichi Hisanao
   	  *densityOwned = (-0.00000014569010515*pressInMPaSquared + 0.000046724532297*pressureInMPa - 0.0061488874609)*tempSquared
-  		+ (0.000088493144499*pressInMPaSquared - 0.029002566308*pressureInMPa + 3.3982146161)*Temperature
+  		+ (0.000088493144499*pressInMPaSquared - 0.029002566308*pressureInMPa + 3.3982146161)*(*temperatureOwned)
   		- 0.013875092279*pressInMPaSquared + 4.9439957018*pressureInMPa + 530.4110022;
     }
   }
@@ -352,7 +352,7 @@ namespace MATERIAL_EVALUATION {
       const double* deltaTemperature
     );
 
-    template void computeInternalFlowComplex
+    void computeInternalFlowComplex
     (
       const std::complex<double> * yOverlap,
       const std::complex<double> * porePressureYOverlap,
@@ -417,7 +417,7 @@ namespace MATERIAL_EVALUATION {
       std::complex<double> dFracMinusPorePress, Y_dx, Y_dy, Y_dz, dY, fracPermeability;
       std::complex<double> fractureDirectionFactor, phaseOneFracPerm, phaseOneRelPermPores,
       std::complex<double> scalarPhaseOnePoreFlow, scalarPhaseOneFracFlow, phaseOneRelPermFrac;
-      std::complex<double> scalarPhaseOneFracToPoreFlow, omegaPores, omegaFrac;
+      std::complex<double> scalarPhaseOneFracToPoreFlow, omegaPores, omegaFrac, fracWidth;
 
       for(int p=0;p<numOwnedPoints;p++, porePressureYOwned++, fracturePressureYOwned++,
                                         yOwned +=3, phaseOnePoreFlowOwned++,
@@ -516,10 +516,8 @@ namespace MATERIAL_EVALUATION {
       ScalarT* phaseTwoFracFlowOverlap,
       const int*  localNeighborList,
       const int numOwnedPoints,
-      const double m_permeabilityScalar,
-      const double m_permeabilityCurveInflectionDamage,
-      const double m_permeabilityAlpha,
-      const double m_maxPermeability,
+
+
       const double m_phaseOneBasePerm,
       const double m_phaseTwoBasePerm,
       const double m_phaseOneDensity,
@@ -634,7 +632,7 @@ namespace MATERIAL_EVALUATION {
             Nonlocal permeability istropic tensor evaluation result
           */
           permeabilityTrace = (permeabilityXX + permeabilityYY + permeabilityZZ);
-          m_permeabilityScalar = (permeabilityXX - 0.25 * permeabilityTrace) * Y_dx * Y_dx
+          ScalarT m_permeabilityScalar = (permeabilityXX - 0.25 * permeabilityTrace) * Y_dx * Y_dx
                                + (permeabilityYY - 0.25 * permeabilityTrace) * Y_dy * Y_dy
                                + (permeabilityZZ - 0.25 * permeabilityTrace) * Y_dz * Y_dz;
 

@@ -345,9 +345,6 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     phaseOnePoreExternalFlowDensityFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Phase_1_External_Pore_Flow_Density");
     phaseOneFracFlowDensityFieldId  = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Phase_1_Frac_Flow_Density");
     phaseOneFracExternalFlowDensityFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Phase_1_External_Frac_Flow_Density");
-
-    matrixPorosityFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Matrix_Porosity");
-    fracturePorosityFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Fracture_Porosity");
   }
 
   modelCoordinatesFieldId            = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::CONSTANT, "Model_Coordinates");
@@ -525,9 +522,6 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
 
     auxiliaryFieldIds.push_back(phaseOnePoreExternalFlowDensityFieldId);
     auxiliaryFieldIds.push_back(phaseOneFracExternalFlowDensityFieldId);
-
-    auxiliaryFieldIds.push_back(matrixPorosityFieldId);
-    auxiliaryFieldIds.push_back(fracturePorosityFieldId);
   }
   if(computeIntersections){
     int tempFieldId;

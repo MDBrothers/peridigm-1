@@ -47,7 +47,7 @@
 
 #include <cmath>
 #include <Sacado.hpp>
-#include "domage_model_dependent_utilities.hpp"
+#include "damage_model_dependent_utilities.hpp"
 #include "material_utilities.h"
 #include <boost/math/special_functions/fpclassify.hpp>
 

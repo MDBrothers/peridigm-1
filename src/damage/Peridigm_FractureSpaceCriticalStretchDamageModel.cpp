@@ -45,7 +45,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "Peridigm_TwoPhaseMultiphysicsCriticalStretchDamageModel.hpp"
+#include "Peridigm_FractureSpaceCriticalStretchDamageModel.hpp"
 #include "Peridigm_Field.hpp"
 
 using namespace std;
