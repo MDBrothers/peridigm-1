@@ -45,6 +45,14 @@
 // ************************************************************************
 //@HEADER
 
+// NOTE:
+// The difference between this model and critical stretch is the addition of
+// bond filters. Unlike how bond filters are originally used, that is to
+// prevent bond formation, filters in this damage model simply modify the
+// damage scalar variables. This allows the connectivity to still be there
+// to allow fluid diffusion, but the damage variable insures that the solid
+// bond is broken as expected.
+
 #ifndef PERIDIGM_FRACTURESPACECRITICALSTRETCHDAMAGEMODEL_HPP
 #define PERIDIGM_FRACTURESPACECRITICALSTRETCHDAMAGEMODEL_HPP
 
@@ -93,19 +101,6 @@ namespace PeridigmNS {
                   const int* neighborhoodList,
                   PeridigmNS::DataManager& dataManager) const ;
 
-    //! Initialize the length weighted fracture direction
-    virtual void
-    initializeLengthWeightedNormalizedFracDirection(const int numOwnedPoints,
-                                                        const int* ownedIDs,
-                                                        const int* neighborhoodList,
-                                                        PeridigmNS::DataManager& dataManager) const;
-
-    //! Compute the new length weighted fracture direction
-    virtual void computeLengthWeightedNormalizedFracDirection(const int numOwnedPoints,
-                                                                  const int* ownedIDs,
-                                                                  const int* neighborhoodList,
-                                                                  PeridigmNS::DataManager& dataManager) const;
-
   protected:
     //! Computes the distance between nodes (a1, a2, a3) and (b1, b2, b3).
 	inline double distance(double a1, double a2, double a3,
@@ -128,7 +123,6 @@ namespace PeridigmNS {
     int m_damageFieldId;
     int m_bondDamageFieldId;
     int m_deltaTemperatureFieldId;
-    int m_fractureDamagePrincipleDirectionFieldId;
     int m_fractureConnectedFieldId;
 
 	// parameter list for specifying bond filters

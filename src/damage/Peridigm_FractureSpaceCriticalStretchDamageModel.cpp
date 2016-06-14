@@ -72,8 +72,7 @@ PeridigmNS::TwoPhaseMultiphysicsCriticalStretchDamageModel::TwoPhaseMultiphysics
   m_coordinatesFieldId = fieldManager.getFieldId("Coordinates");
   m_damageFieldId = fieldManager.getFieldId(PeridigmNS::PeridigmField::ELEMENT, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::TWO_STEP, "Damage");
   m_bondDamageFieldId = fieldManager.getFieldId(PeridigmNS::PeridigmField::BOND, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::TWO_STEP, "Bond_Damage");
-  m_fractureDamagePrincipleDirectionFieldId = fieldManager.getFieldId(PeridigmNS::PeridigmField::ELEMENT, PeridigmNS::PeridigmField::VECTOR, PeridigmNS::PeridigmField::TWO_STEP, "Frac_Damage_Principle_Direction");
-  m_fractureConnectedFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Fracture_Connected");
+  //m_fractureConnectedFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Fracture_Connected");
 
   if(m_applyThermalStrains)
     m_deltaTemperatureFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Temperature_Change");
@@ -82,7 +81,6 @@ PeridigmNS::TwoPhaseMultiphysicsCriticalStretchDamageModel::TwoPhaseMultiphysics
   m_fieldIds.push_back(m_coordinatesFieldId);
   m_fieldIds.push_back(m_damageFieldId);
   m_fieldIds.push_back(m_bondDamageFieldId);
-  m_fieldIds.push_back(m_fractureDamagePrincipleDirectionFieldId);
   if(m_applyThermalStrains)
     m_fieldIds.push_back(m_deltaTemperatureFieldId);
 
@@ -100,13 +98,13 @@ PeridigmNS::TwoPhaseMultiphysicsCriticalStretchDamageModel::initialize(const dou
                                                    const int* neighborhoodList,
                                                    PeridigmNS::DataManager& dataManager) const
 {
-  double *previousDamage, *damage, *bondDamage, *previousBondDamage, *x, *previousFractureConnected, *fractureConnected;
+  double *previousDamage, *damage, *bondDamage, *previousBondDamage, *x;//, *previousFractureConnected, *fractureConnected;
   dataManager.getData(m_damageFieldId, PeridigmField::STEP_N)->ExtractView(&previousDamage);
   dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&previousBondDamage);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
-  dataManager.getData(m_fractureConnectedFieldId, PeridigmField::STEP_N)->ExtractView(&previousFractureConnected);
-  dataManager.getData(m_fractureConnectedFieldId, PeridigmField::STEP_NP1)->ExtractView(&fractureConnected);
+  //dataManager.getData(m_fractureConnectedFieldId, PeridigmField::STEP_N)->ExtractView(&previousFractureConnected);
+  //dataManager.getData(m_fractureConnectedFieldId, PeridigmField::STEP_NP1)->ExtractView(&fractureConnected);
 
   // Get positional data for bond filtering too
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&x);
@@ -197,136 +195,10 @@ PeridigmNS::TwoPhaseMultiphysicsCriticalStretchDamageModel::initialize(const dou
       totalDamage = 0.0;
     damage[nodeId] = totalDamage;
     previousDamage[nodeId] = totalDamage;
-    fractureConnected[nodeId] = 1.0; // Nodes damaged by bond filters are considered connected to the main fracture.
-    previousFractureConnected[nodeId] = 1.0;
+    //fractureConnected[nodeId] = 1.0; // Nodes damaged by bond filters are considered connected to the main fracture.
+    //previousFractureConnected[nodeId] = 1.0;
   }
 
-  // Make sure that any initial fractures come complete with their fracture directions.
-  initializeLengthWeightedNormalizedFracDirection(numOwnedPoints, ownedIDs, neighborhoodList, dataManager);
-
-}
-
-void
-PeridigmNS::TwoPhaseMultiphysicsCriticalStretchDamageModel::initializeLengthWeightedNormalizedFracDirection(const int numOwnedPoints,
-                                                                                                            const int* ownedIDs,
-                                                                                                            const int* neighborhoodList,
-                                                                                                            PeridigmNS::DataManager& dataManager) const
-{
-  double *x, *y, *bondDamageNP1, *fractureDirectionN, *fractureDirectionNP1, *fractureConnectedN, *fractureConnectedNP1;
-  dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&x);
-  dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&y);
-  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
-  dataManager.getData(m_fractureDamagePrincipleDirectionFieldId, PeridigmField::STEP_NP1)->ExtractView(&fractureDirectionNP1);
-  dataManager.getData(m_fractureDamagePrincipleDirectionFieldId, PeridigmField::STEP_N)->ExtractView(&fractureDirectionN);
-
-
-  int neighborhoodListIndex(0), bondIndex(0);
-  int nodeId, numNeighbors, neighborID, iID, iNID;
-  double bondInitialLengthComponentX, bondInitialLengthComponentY, bondInitialLengthComponentZ, originalBondLength;
-  double bondCurrentLengthComponentX, bondCurrentLengthComponentY, bondCurrentLengthComponentZ, currentBondLength;
-  double fractureDirectionMag;
-
-  for(iID=0 ; iID<numOwnedPoints ; ++iID){
-    nodeId = ownedIDs[iID];
-
-    fractureDirectionNP1[nodeId*3] = 0.0; //We want to completely recalculate this every time bond damage is updated.
-    fractureDirectionNP1[nodeId*3+1] = 0.0;
-    fractureDirectionNP1[nodeId*3+2] = 0.0;
-
-    numNeighbors = neighborhoodList[neighborhoodListIndex++];
-    for(iNID=0 ; iNID<numNeighbors ; ++iNID){
-      neighborID = neighborhoodList[neighborhoodListIndex++];
-
-      bondInitialLengthComponentX = x[neighborID*3] - x[nodeId*3];
-      bondInitialLengthComponentY = x[neighborID*3+1] - x[nodeId*3+1];
-      bondInitialLengthComponentZ = x[neighborID*3+2] - x[nodeId*3+2];
-      originalBondLength = sqrt(bondInitialLengthComponentX*bondInitialLengthComponentX +
-                                bondInitialLengthComponentY*bondInitialLengthComponentY +
-                                bondInitialLengthComponentZ*bondInitialLengthComponentZ);
-
-      bondCurrentLengthComponentX = y[neighborID*3] - y[nodeId*3];
-      bondCurrentLengthComponentY = y[neighborID*3+1] - y[nodeId*3+1];
-      bondCurrentLengthComponentZ = y[neighborID*3+2] - y[nodeId*3+2];
-      currentBondLength = sqrt(bondCurrentLengthComponentX*bondCurrentLengthComponentX +
-                               bondCurrentLengthComponentY*bondCurrentLengthComponentY +
-                               bondCurrentLengthComponentZ*bondCurrentLengthComponentZ);
-
-      fractureDirectionNP1[nodeId*3] += originalBondLength*bondCurrentLengthComponentX/currentBondLength*bondDamageNP1[bondIndex];
-      fractureDirectionNP1[nodeId*3+1] += originalBondLength*bondCurrentLengthComponentY/currentBondLength*bondDamageNP1[bondIndex];
-      fractureDirectionNP1[nodeId*3+2] += originalBondLength*bondCurrentLengthComponentZ/currentBondLength*bondDamageNP1[bondIndex];
-
-      bondIndex += 1;
-    }
-
-    fractureDirectionMag = sqrt(fractureDirectionNP1[nodeId*3]*fractureDirectionNP1[nodeId*3]+
-                                fractureDirectionNP1[nodeId*3+1]*fractureDirectionNP1[nodeId*3+1]+
-                                fractureDirectionNP1[nodeId*3+2]*fractureDirectionNP1[nodeId*3+2] );
-    fractureDirectionNP1[nodeId*3] /= (fractureDirectionMag > 0.0 ? fractureDirectionMag : 1.0);
-    fractureDirectionNP1[nodeId*3+1] /= (fractureDirectionMag  > 0.0 ? fractureDirectionMag : 1.0);
-    fractureDirectionNP1[nodeId*3+2] /= (fractureDirectionMag  > 0.0 ? fractureDirectionMag : 1.0);
-    fractureDirectionNP1[nodeId*3] = fractureDirectionNP1[nodeId*3];
-    fractureDirectionNP1[nodeId*3+1] = fractureDirectionNP1[nodeId*3+1];
-    fractureDirectionNP1[nodeId*3+2] = fractureDirectionNP1[nodeId*3+2];
-  }
-}
-
-void
-PeridigmNS::TwoPhaseMultiphysicsCriticalStretchDamageModel::computeLengthWeightedNormalizedFracDirection(const int numOwnedPoints,
-                                                                                                            const int* ownedIDs,
-                                                                                                            const int* neighborhoodList,
-                                                                                                            PeridigmNS::DataManager& dataManager) const
-{
-  double *x, *y, *bondDamageNP1, *fractureDirection;
-  dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&x);
-  dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&y);
-  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
-  dataManager.getData(m_fractureDamagePrincipleDirectionFieldId, PeridigmField::STEP_NP1)->ExtractView(&fractureDirection);
-
-  int neighborhoodListIndex(0), bondIndex(0);
-  int nodeId, numNeighbors, neighborID, iID, iNID;
-  double bondInitialLengthComponentX, bondInitialLengthComponentY, bondInitialLengthComponentZ, originalBondLength;
-  double bondCurrentLengthComponentX, bondCurrentLengthComponentY, bondCurrentLengthComponentZ, currentBondLength;
-  double fractureDirectionMag;
-
-  for(iID=0 ; iID<numOwnedPoints ; ++iID){
-    nodeId = ownedIDs[iID];
-
-    fractureDirection[nodeId*3] = 0.0; //We want to completely recalculate this every time bond damage is updated.
-    fractureDirection[nodeId*3+1] = 0.0;
-    fractureDirection[nodeId*3+2] = 0.0;
-
-    numNeighbors = neighborhoodList[neighborhoodListIndex++];
-    for(iNID=0 ; iNID<numNeighbors ; ++iNID){
-      neighborID = neighborhoodList[neighborhoodListIndex++];
-
-      bondInitialLengthComponentX = x[neighborID*3] - x[nodeId*3];
-      bondInitialLengthComponentY = x[neighborID*3+1] - x[nodeId*3+1];
-      bondInitialLengthComponentZ = x[neighborID*3+2] - x[nodeId*3+2];
-      originalBondLength = sqrt(bondInitialLengthComponentX*bondInitialLengthComponentX +
-                                bondInitialLengthComponentY*bondInitialLengthComponentY +
-                                bondInitialLengthComponentZ*bondInitialLengthComponentZ);
-
-      bondCurrentLengthComponentX = y[neighborID*3] - y[nodeId*3];
-      bondCurrentLengthComponentY = y[neighborID*3+1] - y[nodeId*3+1];
-      bondCurrentLengthComponentZ = y[neighborID*3+2] - y[nodeId*3+2];
-      currentBondLength = sqrt(bondCurrentLengthComponentX*bondCurrentLengthComponentX +
-                               bondCurrentLengthComponentY*bondCurrentLengthComponentY +
-                               bondCurrentLengthComponentZ*bondCurrentLengthComponentZ);
-
-      fractureDirection[nodeId*3] += originalBondLength*bondCurrentLengthComponentX/currentBondLength*bondDamageNP1[bondIndex];
-      fractureDirection[nodeId*3+1] += originalBondLength*bondCurrentLengthComponentY/currentBondLength*bondDamageNP1[bondIndex];
-      fractureDirection[nodeId*3+2] += originalBondLength*bondCurrentLengthComponentZ/currentBondLength*bondDamageNP1[bondIndex];
-
-      bondIndex += 1;
-    }
-
-    fractureDirectionMag = sqrt(fractureDirection[nodeId*3]*fractureDirection[nodeId*3]+
-                                fractureDirection[nodeId*3+1]*fractureDirection[nodeId*3+1]+
-                                fractureDirection[nodeId*3+2]*fractureDirection[nodeId*3+2] );
-    fractureDirection[nodeId*3] /= (fractureDirectionMag > 0.0 ? fractureDirectionMag : 1.0);
-    fractureDirection[nodeId*3+1] /= (fractureDirectionMag  > 0.0 ? fractureDirectionMag : 1.0);
-    fractureDirection[nodeId*3+2] /= (fractureDirectionMag  > 0.0 ? fractureDirectionMag : 1.0);
-  }
 }
 
 void
@@ -341,8 +213,8 @@ PeridigmNS::TwoPhaseMultiphysicsCriticalStretchDamageModel::computeDamage(const 
   dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&y);
   dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
-  dataManager.getData(m_fractureConnectedFieldId, PeridigmField::STEP_NP1)->ExtractView(&fractureConnectedNP1);
-  dataManager.getData(m_fractureConnectedFieldId, PeridigmField::STEP_N)->ExtractView(&fractureConnectedN);
+  //dataManager.getData(m_fractureConnectedFieldId, PeridigmField::STEP_NP1)->ExtractView(&fractureConnectedNP1);
+  //dataManager.getData(m_fractureConnectedFieldId, PeridigmField::STEP_N)->ExtractView(&fractureConnectedN);
   deltaTemperature = NULL;
   if(m_applyThermalStrains)
     dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&deltaTemperature);
@@ -384,7 +256,7 @@ PeridigmNS::TwoPhaseMultiphysicsCriticalStretchDamageModel::computeDamage(const 
         trialDamage = 1.0;
       if(trialDamage > bondDamageNP1[bondIndex]){
         bondDamageNP1[bondIndex] = trialDamage;
-        if(fractureConnectedN[neighborID]==1.0) fractureConnectedNP1[nodeId]==1.0; //If I become damaged and my neighbor was previously fracture connected, I become fracture connected too.
+      //  if(fractureConnectedN[neighborID]==1.0) fractureConnectedNP1[nodeId]==1.0; //If I become damaged and my neighbor was previously fracture connected, I become fracture connected too.
       //thereAreNewBrokenBonds=true;
       }
       bondIndex += 1;
@@ -393,7 +265,7 @@ PeridigmNS::TwoPhaseMultiphysicsCriticalStretchDamageModel::computeDamage(const 
 
   //if(thereAreNewBrokenBonds) std::cout << "New broken bonds\n";
   //recompute the fracture direction
-  computeLengthWeightedNormalizedFracDirection(numOwnedPoints, ownedIDs, neighborhoodList, dataManager);
+  //computeLengthWeightedNormalizedFracDirection(numOwnedPoints, ownedIDs, neighborhoodList, dataManager);
 
   //  Update the element damage (percent of bonds broken)
 
