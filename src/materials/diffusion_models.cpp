@@ -45,6 +45,7 @@
 // ************************************************************************
 //@HEADER
 
+#include <complex>
 #include <cmath>
 #include <Sacado.hpp>
 #include "diffusion_models.hpp"
@@ -68,8 +69,8 @@ namespace MATERIAL_EVALUATION {
     const double* temperatureOwned = deltaTemperature;
 
     for(int p=0; p<numOwnedPoints; p++, densityOwned++, pressureOwned++, temperatureOwned++){
-      const scalarT pressureInMPa = (*pressureOwned)*1.0e-6;
-      const scalarT pressInMPaSquared = pressureInMPa*pressureInMPa;
+      const ScalarT pressureInMPa = (*pressureOwned)*1.0e-6;
+      const ScalarT pressInMPaSquared = pressureInMPa*pressureInMPa;
       double tempSquared = (*temperatureOwned)*(*temperatureOwned);
 
       // Empirical relation supplied to the developer by Ouichi Hisanao
@@ -109,13 +110,13 @@ namespace MATERIAL_EVALUATION {
     const double* temperatureOwned = deltaTemperature;
 
     for(int p=0; p<numOwnedPoints; p++, densityOwned++, pressureOwned++, temperatureOwned++){
-      double pressureInMPa = (*pressureOwned)*1.0e-6;
-      double pressInMPaSquared = pressureInMPa*pressureInMPa;
+      const ScalarT pressureInMPa = (*pressureOwned)*1.0e-6;
+      const ScalarT pressInMPaSquared = pressureInMPa*pressureInMPa;
       double tempSquared = (*temperatureOwned)*(*temperatureOwned);
 
       // Empirical relation supplied to the developer by Ouichi Hisanao
   	  *densityOwned = (-0.00000014569010515*pressInMPaSquared + 0.000046724532297*pressureInMPa - 0.0061488874609)*tempSquared
-  		+ (0.000088493144499*pressInMPaSquared - 0.029002566308*pressureInMPa + 3.3982146161)*Temperature
+  		+ (0.000088493144499*pressInMPaSquared - 0.029002566308*pressureInMPa + 3.3982146161)*(*temperatureOwned)
   		- 0.013875092279*pressInMPaSquared + 4.9439957018*pressureInMPa + 530.4110022;
     }
   }
@@ -148,7 +149,6 @@ namespace MATERIAL_EVALUATION {
       const double* fracturePressureVOverlap,
       const double* volumeOverlap,
       const double* damage,
-      const double* principleDamageDirection,
       const ScalarT* matrixPorosityNP1,
       const double* matrixPorosityN,
       const ScalarT* fracturePorosityNP1,
@@ -162,11 +162,13 @@ namespace MATERIAL_EVALUATION {
       ScalarT* phaseOneFracFlowOverlap,
       const int*  localNeighborList,
       const int numOwnedPoints,
-      const double m_permeabilityScalar,
-      const double m_phaseOneDensity,
+      const double m_matrixPermeabilityXX,
+      const double m_matrixPermeabilityYY,
+      const double m_matrixPermeabilityZZ,
       const double m_phaseOneViscosity,
       const double m_horizon,
       const double m_horizon_fracture,
+      const double deltaTime,
       const double* deltaTemperature
     )
     {
@@ -182,40 +184,36 @@ namespace MATERIAL_EVALUATION {
       const double *v = volumeOverlap;
       const double *deltaT = deltaTemperature;
       const double *damageOwned = damage;
-      const double *principleDamageDirectionOwned = principleDamageDirection;
 
-      const ScalarT *matrixPorosityOwnedNP1 = matrixPorosityNP1;
-      const double *matrixPorosityOwnedN = matrixPorosityN;
-      const ScalarT *fracturePorosityOwnedNP1 = fracturePorosityNP1;
-      const double *fracturePorosityOwnedN = fracturePorosityN;
+      const ScalarT *matrixPorosityNP1Owned = matrixPorosityNP1;
+      const double *matrixPorosityNOwned = matrixPorosityN;
+      const ScalarT *fracturePorosityNP1Owned = fracturePorosityNP1;
+      const double *fracturePorosityNOwned = fracturePorosityN;
 
-    	const ScalarT* phaseOneDensityInPoresOwnedNP1 = phaseOneDensityInPoresNP1;
-    	const double* phaseOneDensityInPoresOwnedN = phaseOneDensityInPoresN;
-    	const ScalarT* phaseOneDensityInFractureOwnedNP1 = phaseOneDensityInFractureNP1;
-    	const double* phaseOneDensityInFractureOwnedN = phaseOneDensityInFractureN;
+    	const ScalarT* phaseOneDensityInPoresNP1Owned = phaseOneDensityInPoresNP1;
+    	const double* phaseOneDensityInPoresNOwned = phaseOneDensityInPoresN;
+    	const ScalarT* phaseOneDensityInFractureNP1Owned = phaseOneDensityInFractureNP1;
+    	const double* phaseOneDensityInFractureNOwned = phaseOneDensityInFractureN;
 
       const ScalarT *thetaLocal = breaklessDilatation;
       ScalarT *phaseOnePoreFlowOwned = phaseOnePoreFlowOverlap;
       ScalarT *phaseOneFracFlowOwned = phaseOneFracFlowOverlap;
 
       const int *neighPtr = localNeighborList;
-      double cellVolume, harmonicAverageDamage;
-      ScalarT permeabilityXX, permeabilityYY, permeabilityZZ, permeabilityTrace;
-      ScalarT phaseOnePorePerm,  dPorePressure, dFracPressure;
+      double cellVolume;
+      ScalarT permeabilityTrace, phaseOnePorePerm, dPorePressure, dFracPressure;
       ScalarT dFracMinusPorePress, Y_dx, Y_dy, Y_dz, dY, fracWidth, fracPermeability;             // SA: fracWidth introduced
-      ScalarT fractureDirectionFactor, phaseOneFracPerm;
-      ScalarT scalarPhaseOnePoreFlow, scalarPhaseOneFracFlow;
+      ScalarT phaseOneFracPerm, scalarPhaseOnePoreFlow, scalarPhaseOneFracFlow;
       ScalarT scalarPhaseOneFracToPoreFlow, omegaPores, omegaFrac;
 
       for(int p=0;p<numOwnedPoints;p++, porePressureYOwned++, fracturePressureYOwned++,
                                         yOwned +=3, phaseOnePoreFlowOwned++,
                                         phaseOneFracFlowOwned++, deltaT++,
                                         damageOwned++, thetaLocal++,
-                                        principleDamageDirectionOwned +=3,
-                                        matrixPorosityOwnedNP1++, fracturePorosityOwnedNP1++,
-                                        matrixPorosityOwnedN++, fracturePorosityOwnedN++,
-    																		phaseOneDensityInFractureOwnedNP1++, phaseOneDensityInPoresOwnedNP1++,
-    																		phaseOneDensityInFractureOwnedN++, phaseOneDensityInPoresOwnedN++,
+                                        matrixPorosityNP1Owned++, fracturePorosityNP1Owned++,
+                                        matrixPorosityNOwned++, fracturePorosityNOwned++,
+    																		phaseOneDensityInFractureNP1Owned++, phaseOneDensityInPoresNP1Owned++,
+    																		phaseOneDensityInFractureNOwned++, phaseOneDensityInPoresNOwned++,
                                         porePressureVOwned++, fracturePressureVOwned++){
         int numNeigh = *neighPtr; neighPtr++;
         double selfCellVolume = v[p];
@@ -224,10 +222,9 @@ namespace MATERIAL_EVALUATION {
         const double *porePressureV = porePressureVOwned;
         const ScalarT *fracturePressureY = fracturePressureYOwned;
         const double *fracturePressureV = fracturePressureVOwned;
-        const double *principleDamageDirection = principleDamageDirectionOwned;
 
         // Fracture permeability
-        fracWidth = 2.0*m_horizon*(*fracturePorosityOwnedNP1);                   //TODO change this to grid spacing from m_horizon
+        fracWidth = 2.0*m_horizon/3.0*(*fracturePorosityNP1Owned);                   //TODO change this to grid spacing from m_horizon/3.0
         fracPermeability = fracWidth*fracWidth/12.0;
 
         dFracMinusPorePress = *fracturePressureY - *porePressureY;
@@ -245,35 +242,31 @@ namespace MATERIAL_EVALUATION {
           Y_dz = *(YP+2) - *(Y+2);
           dY = sqrt(Y_dx*Y_dx+Y_dy*Y_dy+Y_dz*Y_dz);
           //NOTE I want to use DFad<double>, which is why I circumvent the standard influence function code.
-          omegaPores = exp(-dY*dY/(m_horizon*m_horizon));// scalarInfluenceFunction(dY,m_horizon);
+          omegaPores = 1.0 - abs(dY/m_horizon);
           //Frac diffusion is a more local process than pore diffusion.
-          omegaFrac = exp(-dY*dY/(m_horizon_fracture*m_horizon_fracture));// scalarInfluenceFunction(dY,m_horizon_fracture);
+          omegaFrac = 1.0 - abs(dY/m_horizon_fracture);
 
           // Pressure potential
           dPorePressure = *porePressureYP - *porePressureY;
           dFracPressure = *fracturePressureYP - *fracturePressureY;
 
           // compute permeabilities
-          // Frac permeability in directions other than orthogonal to the principle damage direction is strongly attenuated.
-          //fractureDirectionFactor = pow(cos(Y_dx*(*(principleDamageDirection+0)) + Y_dy*(*(principleDamageDirection+1)) + Y_dz*(*(principleDamageDirection+2))),2.0); //Frac flow allowed in direction perpendicular to damage
-          // Frac permeability is affected by bond allignment with fracture plane, width, and saturation
-          phaseOneFracPerm = fracPermeability;//*fractureDirectionFactor;
-
+          phaseOneFracPerm = fracPermeability;
           /*
             Nonlocal permeability istropic tensor evaluation result
           */
-          permeabilityTrace = (permeabilityXX + permeabilityYY + permeabilityZZ);
-          m_permeabilityScalar = (permeabilityXX - 0.25 * permeabilityTrace) * Y_dx * Y_dx
-                               + (permeabilityYY - 0.25 * permeabilityTrace) * Y_dy * Y_dy
-                               + (permeabilityZZ - 0.25 * permeabilityTrace) * Y_dz * Y_dz;
+          permeabilityTrace = (m_matrixPermeabilityXX + m_matrixPermeabilityYY + m_matrixPermeabilityZZ);
+          phaseOnePorePerm = (m_matrixPermeabilityXX - 0.25 * permeabilityTrace) * Y_dx * Y_dx
+                               + (m_matrixPermeabilityYY - 0.25 * permeabilityTrace) * Y_dy * Y_dy
+                               + (m_matrixPermeabilityZZ - 0.25 * permeabilityTrace) * Y_dz * Y_dz;
 
           const double CORR_FACTOR_FRACTURE = 45.0/(4.0*boost::math::constants::pi<double>()*m_horizon_fracture*m_horizon_fracture*m_horizon_fracture);
           const double CORR_FACTOR_PORES = 45.0/(4.0*boost::math::constants::pi<double>()*m_horizon*m_horizon*m_horizon);
 
           // compute flow density
           // flow entering cell is positive
-          scalarPhaseOnePoreFlow = omegaPores * CORR_FACTOR_PORES * (*phaseOneDensityInPoresOwnedNP1) / m_phaseOneViscosity * m_permeabilityScalar / pow(dY, 4.0) * dPorePressure;
-          scalarPhaseOneFracFlow = omegaFrac * CORR_FACTOR_FRACTURE * (*phaseOneDensityInFractureOwnedNP1) / (2.0 * m_phaseOneViscosity) * phaseOneFracPerm / pow(dY, 2.0) * dFracPressure;
+          scalarPhaseOnePoreFlow = omegaPores * CORR_FACTOR_PORES * (*phaseOneDensityInPoresNP1Owned) / m_phaseOneViscosity * phaseOnePorePerm / pow(dY, 4.0) * dPorePressure;
+          scalarPhaseOneFracFlow = omegaFrac * CORR_FACTOR_FRACTURE * (*phaseOneDensityInFractureNP1Owned) / (2.0 * m_phaseOneViscosity) * phaseOneFracPerm / pow(dY, 2.0) * dFracPressure;
 
           // convert flow density to flow and account for reactions
           *phaseOnePoreFlowOwned += scalarPhaseOnePoreFlow*cellVolume;
@@ -281,10 +274,11 @@ namespace MATERIAL_EVALUATION {
           phaseOnePoreFlowOverlap[localId] -= scalarPhaseOnePoreFlow*selfCellVolume;
           phaseOneFracFlowOverlap[localId] -= scalarPhaseOneFracFlow*selfCellVolume;
         }
+        double permeabilityAvg = (m_matrixPermeabilityXX + m_matrixPermeabilityYY + m_matrixPermeabilityZZ)/3.0;
 
         //Add in viscous and leakoff terms from mass conservation equation
-        *phaseOnePoreFlowOwned = *phaseOnePoreFlowOwned -((*phaseOneDensityInPoresOwnedNP1)*(*matrixPorosityNP1) - (*phaseOneDensityInPoresOwnedN)*(*matrixPorosityN))/deltaTime + m_permeabilityScalar*4.0*M_PI*m_horizon_fracture*m_horizon_fracture*dFracMinusPorePress / (selfCellVolume*(1.0 + *thetaLocal)*m_phaseOneViscosity*(m_horizon/2.0));
-        *phaseOneFracFlowOwned = *phaseOneFracFlowOwned -((*phaseOneDensityInFractureOwnedNP1)*(*fracturePorosityNP1) - (*phaseOneDensityInFractureOwnedN)*(*fracturePorosityN))/deltaTime - m_permeabilityScalar*4.0*M_PI*m_horizon_fracture*m_horizon_fracture*dFracMinusPorePress / (selfCellVolume*(1.0 + *thetaLocal)*m_phaseOneViscosity*(m_horizon/2.0));
+        *phaseOnePoreFlowOwned = *phaseOnePoreFlowOwned -((*phaseOneDensityInPoresNP1Owned)*(*matrixPorosityNP1) - (*phaseOneDensityInPoresNOwned)*(*matrixPorosityN))/deltaTime + permeabilityAvg*4.0*M_PI*m_horizon_fracture*m_horizon_fracture*dFracMinusPorePress / (selfCellVolume*(1.0 + *thetaLocal)*m_phaseOneViscosity*(m_horizon/2.0));
+        *phaseOneFracFlowOwned = *phaseOneFracFlowOwned -((*phaseOneDensityInFractureNP1Owned)*(*fracturePorosityNP1) - (*phaseOneDensityInFractureNOwned)*(*fracturePorosityN))/deltaTime - permeabilityAvg*4.0*M_PI*m_horizon_fracture*m_horizon_fracture*dFracMinusPorePress / (selfCellVolume*(1.0 + *thetaLocal)*m_phaseOneViscosity*(m_horizon/2.0));
       }
     }
 
@@ -312,43 +306,13 @@ namespace MATERIAL_EVALUATION {
       double* phaseOneFracFlowOverlap,
       const int*  localNeighborList,
       const int numOwnedPoints,
-      const double m_permeabilityScalar,
-      const double m_phaseOneDensity,
+      const double m_matrixPermeabilityXX,
+      const double m_matrixPermeabilityYY,
+      const double m_matrixPermeabilityZZ,
       const double m_phaseOneViscosity,
       const double m_horizon,
       const double m_horizon_fracture,
-      const double* deltaTemperature
-    );
-
-    /** Explicit template instantiation for Sacado::Fad::DFad<double>. */
-    template void computeInternalFlow<Sacado::Fad::DFad<double> >
-    (
-      const Sacado::Fad::DFad<double> * yOverlap,
-      const Sacado::Fad::DFad<double> * porePressureYOverlap,
-      const double* porePressureVOverlap,
-      const Sacado::Fad::DFad<double> * fracturePressureYOverlap,
-      const double* fracturePressureVOverlap,
-      const double* volumeOverlap,
-      const double* damage,
-      const double* principleDamageDirection,
-      const Sacado::Fad::DFad<double> * matrixPorosityNP1,
-      const double* matrixPorosityN,
-      const Sacado::Fad::DFad<double> * fracturePorosityNP1,
-      const double* fracturePorosityN,
-    	const Sacado::Fad::DFad<double> * phaseOneDensityInPoresNP1,
-    	const double* phaseOneDensityInPoresN,
-    	const Sacado::Fad::DFad<double> * phaseOneDensityInFractureNP1,
-    	const double * phaseOneDensityInFractureN,
-      const Sacado::Fad::DFad<double> * breaklessDilatation,
-      Sacado::Fad::DFad<double> * phaseOnePoreFlowOverlap,
-      Sacado::Fad::DFad<double> * phaseOneFracFlowOverlap,
-      const int*  localNeighborList,
-      const int numOwnedPoints,
-      const double m_permeabilityScalar,
-      const double m_phaseOneDensity,
-      const double m_phaseOneViscosity,
-      const double m_horizon,
-      const double m_horizon_fracture,
+      const double deltaTime,
       const double* deltaTemperature
     );
 
@@ -375,11 +339,13 @@ namespace MATERIAL_EVALUATION {
       std::complex<double> * phaseOneFracFlowOverlap,
       const int*  localNeighborList,
       const int numOwnedPoints,
-      const double m_permeabilityScalar,
-      const double m_phaseOneDensity,
+      const double m_matrixPermeabilityXX,
+      const double m_matrixPermeabilityYY,
+      const double m_matrixPermeabilityZZ,
       const double m_phaseOneViscosity,
       const double m_horizon,
       const double m_horizon_fracture,
+      const double deltaTime,
       const double* deltaTemperature
     )
     {
@@ -387,35 +353,34 @@ namespace MATERIAL_EVALUATION {
        * Compute processor local contribution to internal fluid flow
        */
       const std::complex<double> *yOwned = yOverlap;
-      const double *porePressureVOwned = porePressureVOverlap;
+      const std::complex<double> *porePressureVOwned = porePressureVOverlap;
       const std::complex<double> *porePressureYOwned = porePressureYOverlap;
-      const double *fracturePressureVOwned = fracturePressureVOverlap;
+      const std::complex<double> *fracturePressureVOwned = fracturePressureVOverlap;
       const std::complex<double> *fracturePressureYOwned = fracturePressureYOverlap;
 
       const double *v = volumeOverlap;
       const double *deltaT = deltaTemperature;
       const double *damageOwned = damage;
-      const double *principleDamageDirectionOwned = principleDamageDirection;
 
-      const std::complex<double> *matrixPorosityOwnedNP1 = matrixPorosityNP1;
-      const double *matrixPorosityOwnedN = matrixPorosityN;
-      const std::complex<double> *fracturePorosityOwnedNP1 = fracturePorosityNP1;
-      const double *fracturePorosityOwnedN = fracturePorosityN;
+      const std::complex<double> *matrixPorosityNP1Owned = matrixPorosityNP1;
+      const double *matrixPorosityNOwned = matrixPorosityN;
+      const std::complex<double> *fracturePorosityNP1Owned = fracturePorosityNP1;
+      const double *fracturePorosityNOwned = fracturePorosityN;
 
-      const std::complex<double>* phaseOneDensityInPoresOwnedNP1 = phaseOneDensityInPoresNP1;
-      const double* phaseOneDensityInPoresOwnedN = phaseOneDensityInPoresN;
-      const std::complex<double>* phaseOneDensityInFractureOwnedNP1 = phaseOneDensityInFractureNP1;
-      const double* phaseOneDensityInFractureOwnedN = phaseOneDensityInFractureN;
+      const std::complex<double>* phaseOneDensityInPoresNP1Owned = phaseOneDensityInPoresNP1;
+      const double* phaseOneDensityInPoresNOwned = phaseOneDensityInPoresN;
+      const std::complex<double>* phaseOneDensityInFractureNP1Owned = phaseOneDensityInFractureNP1;
+      const double* phaseOneDensityInFractureNOwned = phaseOneDensityInFractureN;
 
       const std::complex<double> *thetaLocal = breaklessDilatation;
       std::complex<double> *phaseOnePoreFlowOwned = phaseOnePoreFlowOverlap;
       std::complex<double> *phaseOneFracFlowOwned = phaseOneFracFlowOverlap;
 
       const int *neighPtr = localNeighborList;
-      double cellVolume, harmonicAverageDamage;
+      double cellVolume;
       std::complex<double> phaseOnePorePerm,  dPorePressure, dFracPressure;
       std::complex<double> dFracMinusPorePress, Y_dx, Y_dy, Y_dz, dY, fracPermeability;
-      std::complex<double> fractureDirectionFactor, phaseOneFracPerm, phaseOneRelPermPores,
+      std::complex<double> phaseOneFracPerm; permeabilityTrace;
       std::complex<double> scalarPhaseOnePoreFlow, scalarPhaseOneFracFlow, phaseOneRelPermFrac;
       std::complex<double> scalarPhaseOneFracToPoreFlow, omegaPores, omegaFrac, fracWidth;
 
@@ -423,11 +388,10 @@ namespace MATERIAL_EVALUATION {
                                         yOwned +=3, phaseOnePoreFlowOwned++,
                                         phaseOneFracFlowOwned++, deltaT++,
                                         damageOwned++, thetaLocal++,
-                                        principleDamageDirectionOwned +=3,
-                                        matrixPorosityOwnedNP1++, fracturePorosityOwnedNP1++,
-                                        matrixPorosityOwnedN++, fracturePorosityOwnedN++,
-                                        phaseOneDensityInFractureOwnedNP1++, phaseOneDensityInPoresOwnedNP1++,
-                                        phaseOneDensityInFractureOwnedN++, phaseOneDensityInPoresOwnedN++,
+                                        matrixPorosityNP1Owned++, fracturePorosityNP1Owned++,
+                                        matrixPorosityNOwned++, fracturePorosityNOwned++,
+                                        phaseOneDensityInFractureNP1Owned++, phaseOneDensityInPoresNP1Owned++,
+                                        phaseOneDensityInFractureNOwned++, phaseOneDensityInPoresNOwned++,
                                         porePressureVOwned++, fracturePressureVOwned++){
         int numNeigh = *neighPtr; neighPtr++;
         double selfCellVolume = v[p];
@@ -436,10 +400,9 @@ namespace MATERIAL_EVALUATION {
         const double *porePressureV = porePressureVOwned;
         const std::complex<double> *fracturePressureY = fracturePressureYOwned;
         const double *fracturePressureV = fracturePressureVOwned;
-        const double *principleDamageDirection = principleDamageDirectionOwned;
 
         // Fracture permeability
-        fracWidth = 2.0*m_horizon*(*fracturePorosityOwnedNP1);
+        fracWidth = 2.0*m_horizon/3.0*(*fracturePorosityNP1Owned);  //TODO replace m_horizon/3.0 with actual grid spacing
         fracPermeability = fracWidth*fracWidth/12.0;
 
         dFracMinusPorePress = *fracturePressureY - *porePressureY;
@@ -456,25 +419,33 @@ namespace MATERIAL_EVALUATION {
           Y_dy = *(YP+1) - *(Y+1);
           Y_dz = *(YP+2) - *(Y+2);
           dY = sqrt(Y_dx*Y_dx+Y_dy*Y_dy+Y_dz*Y_dz);
-          //NOTE I want to use DFad<double>, which is why I circumvent the standard influence function code.
-          omegaPores = exp(-dY*dY/(m_horizon*m_horizon));// scalarInfluenceFunction(dY,m_horizon);
+          //NOTE I want to use std::complex<double>, which is why I circumvent the standard influence function code.
+          //NOTE real part needs to be nonnegative.
+          omegaPores =  std::complex<double>(1.0, 0.0) - std::abs(double(std::real(dY/m_horizon))) - std::complex<double>(0.0, std::imag(dY/m_horizon));
           //Frac diffusion is a more local process than pore diffusion.
-          omegaFrac = exp(-dY*dY/(m_horizon_fracture*m_horizon_fracture));// scalarInfluenceFunction(dY,m_horizon_fracture);
+          omegaFrac =  std::complex<double>(1.0, 0.0) - std::abs(double(std::real(dY/m_horizon_fracture))) - std::complex<double>(0.0, std::imag(dY/m_horizon_fracture));
 
           // Pressure potential
           dPorePressure = *porePressureYP - *porePressureY;
           dFracPressure = *fracturePressureYP - *fracturePressureY;
 
           // compute permeabilities
-          // Frac permeability in directions other than orthogonal to the principle damage direction is strongly attenuated.
-          fractureDirectionFactor = pow(cos(Y_dx*(*(principleDamageDirection+0)) + Y_dy*(*(principleDamageDirection+1)) + Y_dz*(*(principleDamageDirection+2))),2.0); //Frac flow allowed in direction perpendicular to damage
-          // Frac permeability is affected by bond allignment with fracture plane, width, and saturation
-          phaseOneFracPerm = fracPermeability*fractureDirectionFactor;
+          phaseOneFracPerm = fracPermeability;
+          /*
+            Nonlocal permeability istropic tensor evaluation result
+          */
+          permeabilityTrace = (m_matrixPermeabilityXX + m_matrixPermeabilityYY + m_matrixPermeabilityZZ);
+          phaseOnePorePerm = (m_matrixPermeabilityXX - 0.25 * permeabilityTrace) * Y_dx * Y_dx
+                               + (m_matrixPermeabilityYY - 0.25 * permeabilityTrace) * Y_dy * Y_dy
+                               + (m_matrixPermeabilityZZ - 0.25 * permeabilityTrace) * Y_dz * Y_dz;
+
+          const double CORR_FACTOR_FRACTURE = 45.0/(4.0*boost::math::constants::pi<double>()*m_horizon_fracture*m_horizon_fracture*m_horizon_fracture);
+          const double CORR_FACTOR_PORES = 45.0/(4.0*boost::math::constants::pi<double>()*m_horizon*m_horizon*m_horizon);
 
           // compute flow density
           // flow entering cell is positive
-          scalarPhaseOnePoreFlow = omegaPores * (*phaseOneDensityInPoresOwnedNP1) / m_phaseOneViscosity * m_permeabilityScalar / pow(dY, 4.0) * dPorePressure;
-          scalarPhaseOneFracFlow = omegaFrac * (*phaseOneDensityInFractureOwnedNP1) / (2.0 * m_phaseOneViscosity) * phaseOneFracPerm / pow(dY, 2.0) * dFracPressure;
+          scalarPhaseOnePoreFlow = omegaPores * CORR_FACTOR_PORES * (*phaseOneDensityInPoresNP1Owned) / m_phaseOneViscosity * phaseOnePorePerm / pow(dY, 4.0) * dPorePressure;
+          scalarPhaseOneFracFlow = omegaFrac * CORR_FACTOR_FRACTURE * (*phaseOneDensityInFractureNP1Owned) / (2.0 * m_phaseOneViscosity) * phaseOneFracPerm / pow(dY, 2.0) * dFracPressure;
 
           // convert flow density to flow and account for reactions
           *phaseOnePoreFlowOwned += scalarPhaseOnePoreFlow*cellVolume;
@@ -482,10 +453,12 @@ namespace MATERIAL_EVALUATION {
           phaseOnePoreFlowOverlap[localId] -= scalarPhaseOnePoreFlow*selfCellVolume;
           phaseOneFracFlowOverlap[localId] -= scalarPhaseOneFracFlow*selfCellVolume;
         }
+        double permeabilityAvg = (m_matrixPermeabilityXX + m_matrixPermeabilityYY + m_matrixPermeabilityZZ)/3.0;
 
         //Add in viscous and leakoff terms from mass conservation equation
-        *phaseOnePoreFlowOwned = *phaseOnePoreFlowOwned -((*phaseOneDensityInPoresOwnedNP1)*(*matrixPorosityNP1) - (*phaseOneDensityInPoresOwnedN)*(*matrixPorosityN))/deltaTime + m_permeabilityScalar*4.0*M_PI*m_horizon_fracture*m_horizon_fracture*dFracMinusPorePress / (selfCellVolume*(1.0 + *thetaLocal)*m_phaseOneViscosity*(m_horizon/2.0));
-        *phaseOneFracFlowOwned = *phaseOneFracFlowOwned -((*phaseOneDensityInFractureOwnedNP1)*(*fracturePorosityNP1) - (*phaseOneDensityInFractureOwnedN)*(*fracturePorosityN))/deltaTime - m_permeabilityScalar*4.0*M_PI*m_horizon_fracture*m_horizon_fracture*dFracMinusPorePress / (selfCellVolume*(1.0 + *thetaLocal)*m_phaseOneViscosity*(m_horizon/2.0));
+        //NOTE it is assumed that grid spacing is 1/3 of the standard horizon in order to compute leakoff diffusion area
+        *phaseOnePoreFlowOwned = *phaseOnePoreFlowOwned -((*phaseOneDensityInPoresNP1Owned)*(*matrixPorosityNP1) - (*phaseOneDensityInPoresNOwned)*(*matrixPorosityN))/deltaTime + permeabilityAvg*4.0*M_PI*m_horizon_fracture*m_horizon_fracture*dFracMinusPorePress / (selfCellVolume*(1.0 + *thetaLocal)*m_phaseOneViscosity*(m_horizon/6.0));
+        *phaseOneFracFlowOwned = *phaseOneFracFlowOwned -((*phaseOneDensityInFractureNP1Owned)*(*fracturePorosityNP1) - (*phaseOneDensityInFractureNOwned)*(*fracturePorosityN))/deltaTime - permeabilityAvg*4.0*M_PI*m_horizon_fracture*m_horizon_fracture*dFracMinusPorePress / (selfCellVolume*(1.0 + *thetaLocal)*m_phaseOneViscosity*(m_horizon/6.0));
       }
     }
 
@@ -507,8 +480,18 @@ namespace MATERIAL_EVALUATION {
       const double* phaseOneSaturationFracVOverlap,
       const double* volumeOverlap,
       const double* damage,
-      const double* principleDamageDirection,
-      const double* criticalDilatationOwned,
+      const ScalarT* matrixPorosityNP1,
+      const double* matrixPorosityN,
+      const ScalarT* fracturePorosityNP1,
+      const double* fracturePorosityN,
+      const ScalarT* phaseOneDensityInPoresNP1,
+      const double* phaseOneDensityInPoresN,
+      const ScalarT* phaseOneDensityInFractureNP1,
+      const double* phaseOneDensityInFractureN,
+      const ScalarT* phaseTwoDensityInPoresNP1,
+      const double* phaseTwoDensityInPoresN,
+      const ScalarT* phaseTwoDensityInFractureNP1,
+      const double* phaseTwoDensityInFractureN,
       const ScalarT* breaklessDilatationOwned,
       ScalarT* phaseOnePoreFlowOverlap,
       ScalarT* phaseOneFracFlowOverlap,
@@ -516,18 +499,14 @@ namespace MATERIAL_EVALUATION {
       ScalarT* phaseTwoFracFlowOverlap,
       const int*  localNeighborList,
       const int numOwnedPoints,
-
-
-      const double m_phaseOneBasePerm,
-      const double m_phaseTwoBasePerm,
-      const double m_phaseOneDensity,
-      const double m_phaseTwoDensity,
-      const double m_phaseOneCompressibility,
-      const double m_phaseTwoCompressibility,
+      const double m_matrixPermeabilityXX,
+      const double m_matrixPermeabilityYY,
+      const double m_matrixPermeabilityZZ,
       const double m_phaseOneViscosity,
       const double m_phaseTwoViscosity,
       const double m_horizon,
       const double m_horizon_fracture,
+      const double deltaTime,
       const double* deltaTemperature
     )
     {
@@ -548,8 +527,22 @@ namespace MATERIAL_EVALUATION {
       const double *v = volumeOverlap;
       const double *deltaT = deltaTemperature;
       const double *damageOwned = damage;
-      const double *principleDamageDirectionOwned = principleDamageDirection;
-      const double *thetaCritical = criticalDilatationOwned;
+
+      const ScalarT* matrixPorosityNP1Owned = matrixPorosityNP1;
+      const double* matrixPorosityNOwned = matrixPorosityN;
+      const ScalarT* fracturePorosityNP1Owned = fracturePorosityNP1;
+      const double* fracturePorosityNOwned= fracturePorosityN;
+
+      const ScalarT* phaseOneDensityInPoresNP1Owned = phaseOneDensityInPoresNP1;
+      const double* phaseOneDensityInPoresNOwned = phaseOneDensityInPoresN;
+      const ScalarT* phaseOneDensityInFractureNP1Owned = phaseOneDensityInFractureNP1;
+      const double* phaseOneDensityInFractureNOwned = phaseOneDensityInFractureN;
+
+      const ScalarT* phaseTwoDensityInPoresNP1Owned = phaseTwoDensityInPoresNP1;
+      const double* phaseTwoDensityInPoresNOwned = phaseTwoDensityInPoresN;
+      const ScalarT* phaseTwoDensityInFractureNP1Owned = phaseTwoDensityInFractureNP1;
+      const double* phaseTwoDensityInFractureNOwned = phaseTwoDensityInFractureN;
+
       const ScalarT *thetaBreakless = breaklessDilatationOwned;
 
       ScalarT *phaseOnePoreFlowOwned = phaseOnePoreFlowOverlap;
@@ -558,11 +551,11 @@ namespace MATERIAL_EVALUATION {
       ScalarT *phaseTwoFracFlowOwned = phaseTwoFracFlowOverlap;
 
       const int *neighPtr = localNeighborList;
-      double cellVolume, harmonicAverageDamage;
-      ScalarT permeabilityXX, permeabilityYY, permeabilityZZ, permeabilityTrace;
+      double cellVolume;
+      ScalarT permeabilityTrace;
       ScalarT phaseOnePorePerm, phaseTwoPorePerm;
       ScalarT dPorePressure, dFracPressure, dFracMinusPorePress, Y_dx, Y_dy, Y_dz, dY, fracPermeability;
-      ScalarT fractureDirectionFactor, phaseOneFracPerm, phaseTwoFracPerm, phaseOneRelPermPores;
+      ScalarT phaseOneFracPerm, phaseTwoFracPerm, phaseOneRelPermPores, fracWidth;
       ScalarT phaseOneRelPermFrac, phaseTwoRelPermPores, phaseTwoRelPermFrac, satStarPores, satStarFrac;
       ScalarT scalarPhaseOnePoreFlow, scalarPhaseOneFracFlow, scalarPhaseTwoPoreFlow, scalarPhaseTwoFracFlow;
       ScalarT scalarPhaseOneFracToPoreFlow, scalarPhaseTwoFracToPoreFlow, omegaPores, omegaFrac;
@@ -572,8 +565,13 @@ namespace MATERIAL_EVALUATION {
                                         phaseOneSaturationFracYOwned++, phaseOneSaturationFracVOwned++,
                                         yOwned +=3, phaseOnePoreFlowOwned++, phaseOneFracFlowOwned++,
                                         phaseTwoPoreFlowOwned++, phaseTwoFracFlowOwned++, deltaT++, damageOwned++,
-                                        principleDamageDirectionOwned +=3, thetaCritical++, thetaBreakless++,
-                                        porePressureVOwned++, fracturePressureVOwned++){
+                                        matrixPorosityNP1Owned++,matrixPorosityNOwned++,
+                                        fracturePorosityNP1Owned++,fracturePorosityNOwned++,
+                                        phaseOneDensityInPoresNP1Owned++,phaseOneDensityInPoresNOwned++,
+                                        phaseOneDensityInFractureNP1Owned++,phaseOneDensityInFractureNOwned++,
+                                        phaseTwoDensityInPoresNP1Owned++,phaseTwoDensityInPoresNOwned++,
+                                        phaseTwoDensityInFractureNP1Owned++,phaseTwoDensityInFractureNOwned++,
+                                        thetaBreakless++,porePressureVOwned++, fracturePressureVOwned++){
         int numNeigh = *neighPtr; neighPtr++;
         double selfCellVolume = v[p];
         const ScalarT *Y = yOwned;
@@ -583,29 +581,21 @@ namespace MATERIAL_EVALUATION {
         const double *fracturePressureV = fracturePressureVOwned;
         const ScalarT *phaseOneSaturationPoresY = phaseOneSaturationPoresYOwned;
         const ScalarT *phaseOneSaturationFracY = phaseOneSaturationFracYOwned;
-        const double *principleDamageDirection = principleDamageDirectionOwned;
 
         // compute relative permeabilities assuming no damage effect
         satStarPores = (*phaseOneSaturationPoresY - 0.2)/0.6; // means spec one is water
         satStarFrac = (*phaseOneSaturationFracY - 0.2)/0.6;
-        phaseOneRelPermPores = m_phaseOneBasePerm*pow(satStarPores, 2.0); //Empirical model, exponent is related to the material
-        phaseOneRelPermFrac = m_phaseOneBasePerm*pow(satStarFrac, 2.0);
-        phaseTwoRelPermPores = m_phaseTwoBasePerm*pow((-satStarPores+1.0),2.0);
-        phaseTwoRelPermFrac = m_phaseTwoBasePerm*pow((-satStarFrac+1.0),2.0);
+        phaseOneRelPermPores = pow(satStarPores, 2.0); //Empirical model, exponent is related to the material
+        phaseOneRelPermFrac = pow(satStarFrac, 2.0);
+        phaseTwoRelPermPores = pow((-satStarPores+1.0),2.0);
+        phaseTwoRelPermFrac = pow((-satStarFrac+1.0),2.0);
 
         // for to calculate Leakoff
         dFracMinusPorePress = *fracturePressureY - *porePressureY;
 
-        //compute fracture width based on a two sphere diameter difference. An ad-hoc relation.
-        if(*thetaBreakless > 0.0){
-          fracPermeability = pow(6.0/M_PI*selfCellVolume*(*thetaBreakless),1.0/3.0) - pow(6.0/M_PI*selfCellVolume*(*thetaCritical),1.0/3.0);
-          if(fracPermeability < 0.0)
-            fracPermeability = 0.0; //Closed fractures have no flow
-        }
-        else
-          fracPermeability = 0.0;
-
-        fracPermeability *= fracPermeability/12.0; //Empirical relation for permeability
+        // Fracture permeability
+        fracWidth = 2.0*m_horizon/3.0*(*fracturePorosityNP1Owned);  //TODO replace m_horizon/3.0 with actual grid spacing
+        fracPermeability = fracWidth*fracWidth/12.0;
 
         for(int n=0;n<numNeigh;n++,neighPtr++){
           int localId = *neighPtr;
@@ -620,9 +610,9 @@ namespace MATERIAL_EVALUATION {
           Y_dz = *(YP+2) - *(Y+2);
           dY = sqrt(Y_dx*Y_dx+Y_dy*Y_dy+Y_dz*Y_dz);
           //NOTE I want to use DFad<double>, which is why I circumvent the standard influence function code.
-          omegaPores = exp(-dY*dY/(m_horizon*m_horizon));// scalarInfluenceFunction(dY,m_horizon);
+          omegaPores = 1.0 - abs(dY/m_horizon);
           //Frac diffusion is a more local process than pore diffusion.
-          omegaFrac = exp(-dY*dY/(m_horizon_fracture*m_horizon_fracture));// scalarInfluenceFunction(dY,m_horizon_fracture);
+          omegaFrac = 1.0 - abs(dY/m_horizon_fracture);
 
           // Pressure potential
           dPorePressure = *porePressureYP - *porePressureY;
@@ -631,29 +621,27 @@ namespace MATERIAL_EVALUATION {
           /*
             Nonlocal permeability istropic tensor evaluation result
           */
-          permeabilityTrace = (permeabilityXX + permeabilityYY + permeabilityZZ);
-          ScalarT m_permeabilityScalar = (permeabilityXX - 0.25 * permeabilityTrace) * Y_dx * Y_dx
-                               + (permeabilityYY - 0.25 * permeabilityTrace) * Y_dy * Y_dy
-                               + (permeabilityZZ - 0.25 * permeabilityTrace) * Y_dz * Y_dz;
+          permeabilityTrace = (m_matrixPermeabilityXX + m_matrixPermeabilityYY + m_matrixPermeabilityZZ);
+          ScalarT m_permeabilityScalar = (m_matrixPermeabilityXX - 0.25 * permeabilityTrace) * Y_dx * Y_dx
+                               + (m_matrixPermeabilityYY - 0.25 * permeabilityTrace) * Y_dy * Y_dy
+                               + (m_matrixPermeabilityZZ - 0.25 * permeabilityTrace) * Y_dz * Y_dz;
 
-          // compute permeabilities
-          // Frac permeability in directions other than orthogonal to the principle damage direction is strongly attenuated.
-          fractureDirectionFactor = pow(cos(Y_dx*(*(principleDamageDirection+0)) + Y_dy*(*(principleDamageDirection+1)) + Y_dz*(*(principleDamageDirection+2))),2.0); //Frac flow allowed in direction perpendicular to damage
-          harmonicAverageDamage = 1.0 / (1.0 / *damageOwned + 1.0 / *damageNeighbor);
-          if(harmonicAverageDamage != harmonicAverageDamage) harmonicAverageDamage=0.0; //test for nan which occurs when a damage is zero.
           // Pore permeability is affected by an ad-hoc S-curve relation to damage.
-          phaseOnePorePerm = m_permeabilityScalar*phaseOneRelPermPores + m_maxPermeability/(exp(-m_permeabilityAlpha*(harmonicAverageDamage - m_permeabilityCurveInflectionDamage))+1.0);
-          phaseTwoPorePerm = m_permeabilityScalar*phaseTwoRelPermPores + m_maxPermeability/(exp(-m_permeabilityAlpha*(harmonicAverageDamage - m_permeabilityCurveInflectionDamage))+1.0);
+          phaseOnePorePerm = m_permeabilityScalar*phaseOneRelPermPores;
+          phaseTwoPorePerm = m_permeabilityScalar*phaseTwoRelPermPores;
           // Frac permeability is affected by bond allignment with fracture plane, width, and saturation
-          phaseOneFracPerm = fracPermeability*fractureDirectionFactor*phaseOneRelPermFrac;
-          phaseTwoFracPerm = fracPermeability*fractureDirectionFactor*phaseTwoRelPermFrac;
+          phaseOneFracPerm = fracPermeability*phaseOneRelPermFrac;
+          phaseTwoFracPerm = fracPermeability*phaseTwoRelPermFrac;
 
           // compute flow density
+          const double CORR_FACTOR_FRACTURE = 45.0/(4.0*boost::math::constants::pi<double>()*m_horizon_fracture*m_horizon_fracture*m_horizon_fracture);
+          const double CORR_FACTOR_PORES = 45.0/(4.0*boost::math::constants::pi<double>()*m_horizon*m_horizon*m_horizon);
+
           // flow entering cell is positive
-          scalarPhaseOnePoreFlow = omegaPores * m_phaseOneDensity / m_phaseOneViscosity * (4.0 / (M_PI*m_horizon*m_horizon)) * (phaseOnePorePerm / pow(dY, 4.0)) * dPorePressure;
-          scalarPhaseOneFracFlow = omegaFrac * m_phaseOneDensity / m_phaseOneViscosity * (4.0 / (M_PI*m_horizon_fracture*m_horizon_fracture)) * (phaseOneFracPerm / pow(dY, 4.0)) * dFracPressure;
-          scalarPhaseTwoPoreFlow = omegaPores * m_phaseTwoDensity / m_phaseTwoViscosity * (4.0 / (M_PI*m_horizon*m_horizon)) * (phaseTwoPorePerm / pow(dY, 4.0)) * dPorePressure;
-          scalarPhaseTwoFracFlow = omegaFrac * m_phaseTwoDensity / m_phaseTwoViscosity * (4.0 / (M_PI*m_horizon_fracture*m_horizon_fracture)) * (phaseTwoFracPerm / pow(dY, 4.0)) * dFracPressure;
+          scalarPhaseOnePoreFlow = omegaPores * CORR_FACTOR_PORES * (*phaseOneDensityInPoresNP1Owned) / m_phaseOneViscosity * phaseOnePorePerm / pow(dY, 4.0) * dPorePressure;
+          scalarPhaseOneFracFlow = omegaFrac * CORR_FACTOR_FRACTURE * (*phaseOneDensityInFractureNP1Owned) / (2.0 * m_phaseOneViscosity) * phaseOneFracPerm / pow(dY, 2.0) * dFracPressure;
+          scalarPhaseTwoPoreFlow = omegaPores * CORR_FACTOR_PORES * (*phaseTwoDensityInPoresNP1Owned) / m_phaseTwoViscosity * phaseTwoPorePerm / pow(dY, 4.0) * dPorePressure;
+          scalarPhaseTwoFracFlow = omegaFrac * CORR_FACTOR_FRACTURE * (*phaseTwoDensityInFractureNP1Owned) / (2.0 * m_phaseTwoViscosity) * phaseTwoFracPerm / pow(dY, 2.0) * dFracPressure;
 
           // convert flow density to flow and account for reactions
           *phaseOnePoreFlowOwned += scalarPhaseOnePoreFlow*cellVolume;
@@ -666,28 +654,21 @@ namespace MATERIAL_EVALUATION {
           phaseTwoFracFlowOverlap[localId] -= scalarPhaseTwoFracFlow*selfCellVolume;
         }
 
-        //Leakoff calculation, self to self
-        *phaseOnePoreFlowOwned += m_phaseOneDensity / m_phaseOneViscosity * 4.0 / (M_PI*m_horizon_fracture*m_horizon_fracture) * (m_permeabilityScalar*phaseOneRelPermPores + m_maxPermeability/(1.0 + exp(-m_permeabilityAlpha*(*damageOwned - m_permeabilityCurveInflectionDamage))) / pow(m_horizon_fracture, 4.0)) * dFracMinusPorePress;
-        *phaseOneFracFlowOwned -= m_phaseOneDensity / m_phaseOneViscosity * 4.0 / (M_PI*m_horizon_fracture*m_horizon_fracture) * (m_permeabilityScalar*phaseOneRelPermPores + m_maxPermeability/(1.0 + exp(-m_permeabilityAlpha*(*damageOwned - m_permeabilityCurveInflectionDamage))) / pow(m_horizon_fracture, 4.0)) * dFracMinusPorePress;
-        *phaseTwoPoreFlowOwned += m_phaseTwoDensity / m_phaseTwoViscosity * 4.0 / (M_PI*m_horizon_fracture*m_horizon_fracture) * (m_permeabilityScalar*phaseTwoRelPermPores + m_maxPermeability/(1.0 + exp(-m_permeabilityAlpha*(*damageOwned - m_permeabilityCurveInflectionDamage))) / pow(m_horizon_fracture, 4.0)) * dFracMinusPorePress;
-        *phaseTwoFracFlowOwned -= m_phaseTwoDensity / m_phaseTwoViscosity * 4.0 / (M_PI*m_horizon_fracture*m_horizon_fracture) * (m_permeabilityScalar*phaseTwoRelPermPores + m_maxPermeability/(1.0 + exp(-m_permeabilityAlpha*(*damageOwned - m_permeabilityCurveInflectionDamage))) / pow(m_horizon_fracture, 4.0)) * dFracMinusPorePress;
+        double permeabilityAvg = (m_matrixPermeabilityXX + m_matrixPermeabilityYY + m_matrixPermeabilityZZ)/3.0;
+        //Add in viscous and leakoff terms from mass conservation equation
+        //NOTE it is assumed that grid spacing is 1/3 of the standard horizon in order to compute leakoff diffusion area
+        *phaseOnePoreFlowOwned = *phaseOnePoreFlowOwned -((*phaseOneDensityInPoresNP1Owned)*(*matrixPorosityNP1) - (*phaseOneDensityInPoresNOwned)*(*matrixPorosityN))/deltaTime + permeabilityAvg*4.0*M_PI*m_horizon_fracture*m_horizon_fracture*dFracMinusPorePress / (selfCellVolume*(1.0 + *thetaBreakless)*m_phaseOneViscosity*(m_horizon/6.0));
+        *phaseOneFracFlowOwned = *phaseOneFracFlowOwned -((*phaseOneDensityInFractureNP1Owned)*(*fracturePorosityNP1) - (*phaseOneDensityInFractureNOwned)*(*fracturePorosityN))/deltaTime - permeabilityAvg*4.0*M_PI*m_horizon_fracture*m_horizon_fracture*dFracMinusPorePress / (selfCellVolume*(1.0 + *thetaBreakless)*m_phaseOneViscosity*(m_horizon/6.0));
+        *phaseTwoPoreFlowOwned = *phaseTwoPoreFlowOwned -((*phaseTwoDensityInPoresNP1Owned)*(*matrixPorosityNP1) - (*phaseTwoDensityInPoresNOwned)*(*matrixPorosityN))/deltaTime + permeabilityAvg*4.0*M_PI*m_horizon_fracture*m_horizon_fracture*dFracMinusPorePress / (selfCellVolume*(1.0 + *thetaBreakless)*m_phaseTwoViscosity*(m_horizon/6.0));
+        *phaseTwoFracFlowOwned = *phaseTwoFracFlowOwned -((*phaseTwoDensityInFractureNP1Owned)*(*fracturePorosityNP1) - (*phaseTwoDensityInFractureNOwned)*(*fracturePorosityN))/deltaTime - permeabilityAvg*4.0*M_PI*m_horizon_fracture*m_horizon_fracture*dFracMinusPorePress / (selfCellVolume*(1.0 + *thetaBreakless)*m_phaseTwoViscosity*(m_horizon/6.0));
 
-        //Viscous terms
-        double Porosity= 0.2;
-        double B_formation_vol_factor_water = 1.0;
-        double B_formation_vol_factor_oil = 1.0;
-        double Compressibility_rock = 1.0;
-        *phaseOnePoreFlowOwned = *phaseOnePoreFlowOwned - *porePressureV*m_phaseOneDensity*(Compressibility_rock + m_phaseOneCompressibility)*Porosity*(*phaseOneSaturationPoresYOwned)/B_formation_vol_factor_water + Porosity/B_formation_vol_factor_water*(*phaseOneSaturationPoresVOwned);
-        *phaseOneFracFlowOwned = *phaseOneFracFlowOwned - *fracturePressureV*m_phaseOneDensity*(Compressibility_rock + m_phaseOneCompressibility)*Porosity*(*phaseOneSaturationFracYOwned)/B_formation_vol_factor_water + Porosity/B_formation_vol_factor_water*(*phaseOneSaturationFracVOwned);
-        *phaseTwoPoreFlowOwned = *phaseTwoPoreFlowOwned - *porePressureV*m_phaseTwoDensity*(Compressibility_rock + m_phaseTwoCompressibility)*Porosity*(1.0 - *phaseOneSaturationPoresYOwned)/B_formation_vol_factor_oil + Porosity/B_formation_vol_factor_oil*(*phaseOneSaturationPoresVOwned);
-        *phaseTwoFracFlowOwned = *phaseTwoFracFlowOwned - *fracturePressureV*m_phaseTwoDensity*(Compressibility_rock + m_phaseTwoCompressibility)*Porosity*(1.0 - *phaseOneSaturationFracYOwned)/B_formation_vol_factor_oil + Porosity/B_formation_vol_factor_oil*(*phaseOneSaturationFracVOwned);
       }
     }
 
     /** Explicit template instantiation for double. */
     template void computeInternalFlow<double>
     (
-    	const double* yOverlap,
+      const double* yOverlap,
       const double* porePressureYOverlap,
       const double* porePressureVOverlap,
       const double* fracturePressureYOverlap,
@@ -698,8 +679,18 @@ namespace MATERIAL_EVALUATION {
       const double* phaseOneSaturationFracVOverlap,
       const double* volumeOverlap,
       const double* damage,
-      const double* principleDamageDirection,
-      const double* criticalDilatationOwned,
+      const double* matrixPorosityNP1,
+      const double* matrixPorosityN,
+      const double* fracturePorosityNP1,
+      const double* fracturePorosityN,
+      const double* phaseOneDensityInPoresNP1,
+      const double* phaseOneDensityInPoresN,
+      const double* phaseOneDensityInFractureNP1,
+      const double* phaseOneDensityInFractureN,
+      const double* phaseTwoDensityInPoresNP1,
+      const double* phaseTwoDensityInPoresN,
+      const double* phaseTwoDensityInFractureNP1,
+      const double* phaseTwoDensityInFractureN,
       const double* breaklessDilatationOwned,
       double* phaseOnePoreFlowOverlap,
       double* phaseOneFracFlowOverlap,
@@ -707,60 +698,14 @@ namespace MATERIAL_EVALUATION {
       double* phaseTwoFracFlowOverlap,
       const int*  localNeighborList,
       const int numOwnedPoints,
-      const double m_permeabilityScalar,
-      const double m_permeabilityCurveInflectionDamage,
-      const double m_permeabilityAlpha,
-      const double m_maxPermeability,
-      const double m_phaseOneBasePerm,
-      const double m_phaseTwoBasePerm,
-      const double m_phaseOneDensity,
-      const double m_phaseTwoDensity,
-      const double m_phaseOneCompressibility,
-      const double m_phaseTwoCompressibility,
+      const double m_matrixPermeabilityXX,
+      const double m_matrixPermeabilityYY,
+      const double m_matrixPermeabilityZZ,
       const double m_phaseOneViscosity,
       const double m_phaseTwoViscosity,
       const double m_horizon,
       const double m_horizon_fracture,
-      const double* deltaTemperature
-    );
-
-    /** Explicit template instantiation for Sacado::Fad::DFad<double>. */
-    template void computeInternalFlow<Sacado::Fad::DFad<double> >
-    (
-    	const Sacado::Fad::DFad<double>* yOverlap,
-      const Sacado::Fad::DFad<double>* porePressureYOverlap,
-      const double* porePressureVOverlap,
-      const Sacado::Fad::DFad<double>* fracturePressureYOverlap,
-      const double* fracturePressureVOverlap,
-      const Sacado::Fad::DFad<double>* phaseOneSaturationPoresYOverlap,
-      const double* phaseOneSaturationPoresVOverlap,
-      const Sacado::Fad::DFad<double>* phaseOneSaturationFracYOverlap,
-      const double* phaseOneSaturationFracVOverlap,
-      const double* volumeOverlap,
-      const double* damage,
-      const double* principleDamageDirection,
-      const double* criticalDilatationOwned,
-      const Sacado::Fad::DFad<double>* breaklessDilatationOwned,
-      Sacado::Fad::DFad<double>* phaseOnePoreFlowOverlap,
-      Sacado::Fad::DFad<double>* phaseOneFracFlowOverlap,
-      Sacado::Fad::DFad<double>* phaseTwoPoreFlowOverlap,
-      Sacado::Fad::DFad<double>* phaseTwoFracFlowOverlap,
-      const int*  localNeighborList,
-      const int numOwnedPoints,
-      const double m_permeabilityScalar,
-      const double m_permeabilityCurveInflectionDamage,
-      const double m_permeabilityAlpha,
-      const double m_maxPermeability,
-      const double m_phaseOneBasePerm,
-      const double m_phaseTwoBasePerm,
-      const double m_phaseOneDensity,
-      const double m_phaseTwoDensity,
-      const double m_phaseOneCompressibility,
-      const double m_phaseTwoCompressibility,
-      const double m_phaseOneViscosity,
-      const double m_phaseTwoViscosity,
-      const double m_horizon,
-      const double m_horizon_fracture,
+      const double deltaTime,
       const double* deltaTemperature
     );
 
@@ -779,8 +724,18 @@ namespace MATERIAL_EVALUATION {
       const std::complex<double>* phaseOneSaturationFracVOverlap,
       const double* volumeOverlap,
       const double* damage,
-      const double* principleDamageDirection,
-      const double* criticalDilatationOwned,
+      const std::complex<double>* matrixPorosityNP1,
+      const double* matrixPorosityN,
+      const std::complex<double>* fracturePorosityNP1,
+      const double* fracturePorosityN,
+      const std::complex<double>* phaseOneDensityInPoresNP1,
+      const double* phaseOneDensityInPoresN,
+      const std::complex<double>* phaseOneDensityInFractureNP1,
+      const double* phaseOneDensityInFractureN,
+      const std::complex<double>* phaseTwoDensityInPoresNP1,
+      const double* phaseTwoDensityInPoresN,
+      const std::complex<double>* phaseTwoDensityInFractureNP1,
+      const double* phaseTwoDensityInFractureN,
       const std::complex<double>* breaklessDilatationOwned,
       std::complex<double>* phaseOnePoreFlowOverlap,
       std::complex<double>* phaseOneFracFlowOverlap,
@@ -788,20 +743,14 @@ namespace MATERIAL_EVALUATION {
       std::complex<double>* phaseTwoFracFlowOverlap,
       const int*  localNeighborList,
       const int numOwnedPoints,
-      const double m_permeabilityScalar,
-      const double m_permeabilityCurveInflectionDamage,
-      const double m_permeabilityAlpha,
-      const double m_maxPermeability,
-      const double m_phaseOneBasePerm,
-      const double m_phaseTwoBasePerm,
-      const double m_phaseOneDensity,
-      const double m_phaseTwoDensity,
-      const double m_phaseOneCompressibility,
-      const double m_phaseTwoCompressibility,
+      const double m_matrixPermeabilityXX,
+      const double m_matrixPermeabilityYY,
+      const double m_matrixPermeabilityZZ,
       const double m_phaseOneViscosity,
       const double m_phaseTwoViscosity,
       const double m_horizon,
       const double m_horizon_fracture,
+      const double deltaTime,
       const double* deltaTemperature
     )
     {
@@ -822,8 +771,22 @@ namespace MATERIAL_EVALUATION {
       const double *v = volumeOverlap;
       const double *deltaT = deltaTemperature;
       const double *damageOwned = damage;
-      const double *principleDamageDirectionOwned = principleDamageDirection;
-      const double *thetaCritical = criticalDilatationOwned;
+
+      const std::complex<double>* matrixPorosityNP1Owned = matrixPorosityNP1;
+      const double* matrixPorosityNOwned = matrixPorosityN;
+      const std::complex<double>* fracturePorosityNP1Owned = fracturePorosityNP1;
+      const double* fracturePorosityNOwned= fracturePorosityN;
+
+      const std::complex<double>* phaseOneDensityInPoresNP1Owned = phaseOneDensityInPoresNP1;
+      const double* phaseOneDensityInPoresNOwned = phaseOneDensityInPoresN;
+      const std::complex<double>* phaseOneDensityInFractureNP1Owned = phaseOneDensityInFractureNP1;
+      const double* phaseOneDensityInFractureNOwned = phaseOneDensityInFractureN;
+
+      const std::complex<double>* phaseTwoDensityInPoresNP1Owned = phaseTwoDensityInPoresNP1;
+      const double* phaseTwoDensityInPoresNOwned = phaseTwoDensityInPoresN;
+      const std::complex<double>* phaseTwoDensityInFractureNP1Owned = phaseTwoDensityInFractureNP1;
+      const double* phaseTwoDensityInFractureNOwned = phaseTwoDensityInFractureN;
+
       const std::complex<double> *thetaBreakless = breaklessDilatationOwned;
 
       std::complex<double> *phaseOnePoreFlowOwned = phaseOnePoreFlowOverlap;
@@ -832,10 +795,10 @@ namespace MATERIAL_EVALUATION {
       std::complex<double> *phaseTwoFracFlowOwned = phaseTwoFracFlowOverlap;
 
       const int *neighPtr = localNeighborList;
-      double cellVolume, harmonicAverageDamage;
-      std::complex<double> phaseOnePorePerm, phaseTwoPorePerm;
+      double cellVolume;
+      std::complex<double> phaseOnePorePerm, phaseTwoPorePerm, permeabilityTrace;
       std::complex<double> dPorePressure, dFracPressure, dFracMinusPorePress, Y_dx, Y_dy, Y_dz, dY, fracPermeability;
-      std::complex<double> fractureDirectionFactor, phaseOneFracPerm, phaseTwoFracPerm, phaseOneRelPermPores;
+      std::complex<double> phaseOneFracPerm, phaseTwoFracPerm, phaseOneRelPermPores;
       std::complex<double> phaseOneRelPermFrac, phaseTwoRelPermPores, phaseTwoRelPermFrac, satStarPores, satStarFrac;
       std::complex<double> scalarPhaseOnePoreFlow, scalarPhaseOneFracFlow, scalarPhaseTwoPoreFlow, scalarPhaseTwoFracFlow;
       std::complex<double> scalarPhaseOneFracToPoreFlow, scalarPhaseTwoFracToPoreFlow, omegaPores, omegaFrac;
@@ -845,8 +808,13 @@ namespace MATERIAL_EVALUATION {
                                         phaseOneSaturationFracYOwned++, phaseOneSaturationFracVOwned++,
                                         yOwned +=3, phaseOnePoreFlowOwned++, phaseOneFracFlowOwned++,
                                         phaseTwoPoreFlowOwned++, phaseTwoFracFlowOwned++, deltaT++, damageOwned++,
-                                        principleDamageDirectionOwned +=3, thetaCritical++, thetaBreakless++,
-                                        porePressureVOwned++, fracturePressureVOwned++){
+                                        matrixPorosityNP1Owned++,matrixPorosityNOwned++,
+                                        fracturePorosityNP1Owned++,fracturePorosityNOwned++,
+                                        phaseOneDensityInPoresNP1Owned++,phaseOneDensityInPoresNOwned++,
+                                        phaseOneDensityInFractureNP1Owned++,phaseOneDensityInFractureNOwned++,
+                                        phaseTwoDensityInPoresNP1Owned++,phaseTwoDensityInPoresNOwned++,
+                                        phaseTwoDensityInFractureNP1Owned++,phaseTwoDensityInFractureNOwned++,
+                                        thetaBreakless++,porePressureVOwned++, fracturePressureVOwned++){
         int numNeigh = *neighPtr; neighPtr++;
         double selfCellVolume = v[p];
         const std::complex<double> *Y = yOwned;
@@ -856,29 +824,21 @@ namespace MATERIAL_EVALUATION {
         const std::complex<double> *fracturePressureV = fracturePressureVOwned;
         const std::complex<double> *phaseOneSaturationPoresY = phaseOneSaturationPoresYOwned;
         const std::complex<double> *phaseOneSaturationFracY = phaseOneSaturationFracYOwned;
-        const double *principleDamageDirection = principleDamageDirectionOwned;
 
         // compute relative permeabilities assuming no damage effect
         satStarPores = (*phaseOneSaturationPoresY - 0.2)/0.6; // means spec one is water
         satStarFrac = (*phaseOneSaturationFracY - 0.2)/0.6;
-        phaseOneRelPermPores = m_phaseOneBasePerm*pow(satStarPores, 2.0); //Empirical model, exponent is related to the material
-        phaseOneRelPermFrac = m_phaseOneBasePerm*pow(satStarFrac, 2.0);
-        phaseTwoRelPermPores = m_phaseTwoBasePerm*pow((-satStarPores+1.0),2.0);
-        phaseTwoRelPermFrac = m_phaseTwoBasePerm*pow((-satStarFrac+1.0),2.0);
+        phaseOneRelPermPores = pow(satStarPores, 2.0); //Empirical model, exponent is related to the material
+        phaseOneRelPermFrac = pow(satStarFrac, 2.0);
+        phaseTwoRelPermPores = pow((-satStarPores+1.0),2.0);
+        phaseTwoRelPermFrac = pow((-satStarFrac+1.0),2.0);
 
         // for to calculate Leakoff
         dFracMinusPorePress = *fracturePressureY - *porePressureY;
 
-        //compute fracture width based on a two sphere diameter difference. An ad-hoc relation.
-        if(std::real(*thetaBreakless) > 0.0){
-          fracPermeability = pow(6.0/M_PI*selfCellVolume*(*thetaBreakless),1.0/3.0) - pow(6.0/M_PI*selfCellVolume*(*thetaCritical),1.0/3.0);
-          if(std::real(fracPermeability) < 0.0)
-            fracPermeability = std::complex<double>(0.0, std::imag(fracPermeability)); //Closed fractures have no real flow
-        }
-        else
-          fracPermeability = std::complex<double>(0.0, std::imag(fracPermeability));
-
-        fracPermeability *= fracPermeability/12.0; //Empirical relation for permeability
+        // Fracture permeability
+        fracWidth = 2.0*m_horizon/3.0*(*fracturePorosityNP1Owned);  //TODO replace m_horizon/3.0 with actual grid spacing
+        fracPermeability = fracWidth*fracWidth/12.0;
 
         for(int n=0;n<numNeigh;n++,neighPtr++){
           int localId = *neighPtr;
@@ -893,33 +853,39 @@ namespace MATERIAL_EVALUATION {
           Y_dz = *(YP+2) - *(Y+2);
           dY = sqrt(Y_dx*Y_dx+Y_dy*Y_dy+Y_dz*Y_dz);
           //NOTE I want to use std::complex<double>, which is why I circumvent the standard influence function code.
-          omegaPores = exp(-dY*dY/(m_horizon*m_horizon));// scalarInfluenceFunction(dY,m_horizon);
+          //NOTE real part needs to be nonnegative.
+          omegaPores =  std::complex<double>(1.0, 0.0) - std::abs(std::real(dY/m_horizon)) - std::complex<double>(0.0, std::imag(dY/m_horizon));
           //Frac diffusion is a more local process than pore diffusion.
-          omegaFrac = exp(-dY*dY/(m_horizon_fracture*m_horizon_fracture));// scalarInfluenceFunction(dY,m_horizon_fracture);
+          omegaFrac =  std::complex<double>(1.0, 0.0) - std::abs(std::real(dY/m_horizon_fracture)) - std::complex<double>(0.0, std::imag(dY/m_horizon_fracture));
 
           // Pressure potential
           dPorePressure = *porePressureYP - *porePressureY;
           dFracPressure = *fracturePressureYP - *fracturePressureY;
 
-          // compute permeabilities
-          // Frac permeability in directions other than orthogonal to the principle damage direction is strongly attenuated.
-          fractureDirectionFactor = pow(cos(Y_dx*(*(principleDamageDirection+0)) + Y_dy*(*(principleDamageDirection+1)) + Y_dz*(*(principleDamageDirection+2))),2.0); //Frac flow allowed in direction perpendicular to damage
-          harmonicAverageDamage = 1.0 / (1.0 / *damageOwned + 1.0 / *damageNeighbor);
-          if(harmonicAverageDamage != harmonicAverageDamage) harmonicAverageDamage=0.0; //test for nan which occurs when a damage is zero.
-          // Pore permeability is affected by an ad-hoc S-curve relation to damage.
-          phaseOnePorePerm = m_permeabilityScalar*phaseOneRelPermPores + m_maxPermeability/(exp(-m_permeabilityAlpha*(harmonicAverageDamage - m_permeabilityCurveInflectionDamage))+1.0);
-          phaseTwoPorePerm = m_permeabilityScalar*phaseTwoRelPermPores + m_maxPermeability/(exp(-m_permeabilityAlpha*(harmonicAverageDamage - m_permeabilityCurveInflectionDamage))+1.0);
+          /*
+            Nonlocal permeability istropic tensor evaluation result
+          */
+          permeabilityTrace = (m_matrixPermeabilityXX + m_matrixPermeabilityYY + m_matrixPermeabilityZZ);
+          const std::complex<double> m_permeabilityScalar = (m_matrixPermeabilityXX - 0.25 * permeabilityTrace) * Y_dx * Y_dx
+                               + (m_matrixPermeabilityYY - 0.25 * permeabilityTrace) * Y_dy * Y_dy
+                               + (m_matrixPermeabilityZZ - 0.25 * permeabilityTrace) * Y_dz * Y_dz;
 
+          // Pore permeability is affected by an ad-hoc S-curve relation to damage.
+          phaseOnePorePerm = m_permeabilityScalar*phaseOneRelPermPores;
+          phaseTwoPorePerm = m_permeabilityScalar*phaseTwoRelPermPores;
           // Frac permeability is affected by bond allignment with fracture plane, width, and saturation
-          phaseOneFracPerm = fracPermeability*fractureDirectionFactor*phaseOneRelPermFrac;
-          phaseTwoFracPerm = fracPermeability*fractureDirectionFactor*phaseTwoRelPermFrac;
+          phaseOneFracPerm = fracPermeability*phaseOneRelPermFrac;
+          phaseTwoFracPerm = fracPermeability*phaseTwoRelPermFrac;
 
           // compute flow density
+          const double CORR_FACTOR_FRACTURE = 45.0/(4.0*boost::math::constants::pi<double>()*m_horizon_fracture*m_horizon_fracture*m_horizon_fracture);
+          const double CORR_FACTOR_PORES = 45.0/(4.0*boost::math::constants::pi<double>()*m_horizon*m_horizon*m_horizon);
+
           // flow entering cell is positive
-          scalarPhaseOnePoreFlow = omegaPores * m_phaseOneDensity / m_phaseOneViscosity * (4.0 / (M_PI*m_horizon*m_horizon)) * (phaseOnePorePerm / pow(dY, 4.0)) * dPorePressure;
-          scalarPhaseOneFracFlow = omegaFrac * m_phaseOneDensity / m_phaseOneViscosity * (4.0 / (M_PI*m_horizon_fracture*m_horizon_fracture)) * (phaseOneFracPerm / pow(dY, 4.0)) * dFracPressure;
-          scalarPhaseTwoPoreFlow = omegaPores * m_phaseTwoDensity / m_phaseTwoViscosity * (4.0 / (M_PI*m_horizon*m_horizon)) * (phaseTwoPorePerm / pow(dY, 4.0)) * dPorePressure;
-          scalarPhaseTwoFracFlow = omegaFrac * m_phaseTwoDensity / m_phaseTwoViscosity * (4.0 / (M_PI*m_horizon_fracture*m_horizon_fracture)) * (phaseTwoFracPerm / pow(dY, 4.0)) * dFracPressure;
+          scalarPhaseOnePoreFlow = omegaPores * CORR_FACTOR_PORES * (*phaseOneDensityInPoresNP1Owned) / m_phaseOneViscosity * phaseOnePorePerm / pow(dY, 4.0) * dPorePressure;
+          scalarPhaseOneFracFlow = omegaFrac * CORR_FACTOR_FRACTURE * (*phaseOneDensityInFractureNP1Owned) / (2.0 * m_phaseOneViscosity) * phaseOneFracPerm / pow(dY, 2.0) * dFracPressure;
+          scalarPhaseTwoPoreFlow = omegaPores * CORR_FACTOR_PORES * (*phaseTwoDensityInPoresNP1Owned) / m_phaseTwoViscosity * phaseTwoPorePerm / pow(dY, 4.0) * dPorePressure;
+          scalarPhaseTwoFracFlow = omegaFrac * CORR_FACTOR_FRACTURE * (*phaseTwoDensityInFractureNP1Owned) / (2.0 * m_phaseTwoViscosity) * phaseTwoFracPerm / pow(dY, 2.0) * dFracPressure;
 
           // convert flow density to flow and account for reactions
           *phaseOnePoreFlowOwned += scalarPhaseOnePoreFlow*cellVolume;
@@ -932,24 +898,16 @@ namespace MATERIAL_EVALUATION {
           phaseTwoFracFlowOverlap[localId] -= scalarPhaseTwoFracFlow*selfCellVolume;
         }
 
-        //Leakoff calculation, self to self
-        *phaseOnePoreFlowOwned += m_phaseOneDensity / m_phaseOneViscosity * 4.0 / (M_PI*m_horizon_fracture*m_horizon_fracture) * (m_permeabilityScalar*phaseOneRelPermPores + m_maxPermeability/(1.0 + exp(-m_permeabilityAlpha*(*damageOwned - m_permeabilityCurveInflectionDamage))) / pow(m_horizon_fracture, 4.0)) * dFracMinusPorePress;
-        *phaseOneFracFlowOwned -= m_phaseOneDensity / m_phaseOneViscosity * 4.0 / (M_PI*m_horizon_fracture*m_horizon_fracture) * (m_permeabilityScalar*phaseOneRelPermPores + m_maxPermeability/(1.0 + exp(-m_permeabilityAlpha*(*damageOwned - m_permeabilityCurveInflectionDamage))) / pow(m_horizon_fracture, 4.0)) * dFracMinusPorePress;
-        *phaseTwoPoreFlowOwned += m_phaseTwoDensity / m_phaseTwoViscosity * 4.0 / (M_PI*m_horizon_fracture*m_horizon_fracture) * (m_permeabilityScalar*phaseTwoRelPermPores + m_maxPermeability/(1.0 + exp(-m_permeabilityAlpha*(*damageOwned - m_permeabilityCurveInflectionDamage))) / pow(m_horizon_fracture, 4.0)) * dFracMinusPorePress;
-        *phaseTwoFracFlowOwned -= m_phaseTwoDensity / m_phaseTwoViscosity * 4.0 / (M_PI*m_horizon_fracture*m_horizon_fracture) * (m_permeabilityScalar*phaseTwoRelPermPores + m_maxPermeability/(1.0 + exp(-m_permeabilityAlpha*(*damageOwned - m_permeabilityCurveInflectionDamage))) / pow(m_horizon_fracture, 4.0)) * dFracMinusPorePress;
+        double permeabilityAvg = (m_matrixPermeabilityXX + m_matrixPermeabilityYY + m_matrixPermeabilityZZ)/3.0;
+        //Add in viscous and leakoff terms from mass conservation equation
+        //NOTE it is assumed that grid spacing is 1/3 of the standard horizon in order to compute leakoff diffusion area
+        *phaseOnePoreFlowOwned = *phaseOnePoreFlowOwned -((*phaseOneDensityInPoresNP1Owned)*(*matrixPorosityNP1) - (*phaseOneDensityInPoresNOwned)*(*matrixPorosityN))/deltaTime + permeabilityAvg*4.0*M_PI*m_horizon_fracture*m_horizon_fracture*dFracMinusPorePress / (selfCellVolume*(1.0 + *thetaBreakless)*m_phaseOneViscosity*(m_horizon/6.0));
+        *phaseOneFracFlowOwned = *phaseOneFracFlowOwned -((*phaseOneDensityInFractureNP1Owned)*(*fracturePorosityNP1) - (*phaseOneDensityInFractureNOwned)*(*fracturePorosityN))/deltaTime - permeabilityAvg*4.0*M_PI*m_horizon_fracture*m_horizon_fracture*dFracMinusPorePress / (selfCellVolume*(1.0 + *thetaBreakless)*m_phaseOneViscosity*(m_horizon/6.0));
+        *phaseTwoPoreFlowOwned = *phaseTwoPoreFlowOwned -((*phaseTwoDensityInPoresNP1Owned)*(*matrixPorosityNP1) - (*phaseTwoDensityInPoresNOwned)*(*matrixPorosityN))/deltaTime + permeabilityAvg*4.0*M_PI*m_horizon_fracture*m_horizon_fracture*dFracMinusPorePress / (selfCellVolume*(1.0 + *thetaBreakless)*m_phaseTwoViscosity*(m_horizon/6.0));
+        *phaseTwoFracFlowOwned = *phaseTwoFracFlowOwned -((*phaseTwoDensityInFractureNP1Owned)*(*fracturePorosityNP1) - (*phaseTwoDensityInFractureNOwned)*(*fracturePorosityN))/deltaTime - permeabilityAvg*4.0*M_PI*m_horizon_fracture*m_horizon_fracture*dFracMinusPorePress / (selfCellVolume*(1.0 + *thetaBreakless)*m_phaseTwoViscosity*(m_horizon/6.0));
 
-        //Viscous terms
-        double Porosity= 0.2;
-        double B_formation_vol_factor_water = 1.0;
-        double B_formation_vol_factor_oil = 1.0;
-        double Compressibility_rock = 1.0;
-        *phaseOnePoreFlowOwned = *phaseOnePoreFlowOwned - *porePressureV*m_phaseOneDensity*(Compressibility_rock + m_phaseOneCompressibility)*Porosity*(*phaseOneSaturationPoresYOwned)/B_formation_vol_factor_water + Porosity/B_formation_vol_factor_water*(*phaseOneSaturationPoresVOwned);
-        *phaseOneFracFlowOwned = *phaseOneFracFlowOwned - *fracturePressureV*m_phaseOneDensity*(Compressibility_rock + m_phaseOneCompressibility)*Porosity*(*phaseOneSaturationFracYOwned)/B_formation_vol_factor_water + Porosity/B_formation_vol_factor_water*(*phaseOneSaturationFracVOwned);
-        *phaseTwoPoreFlowOwned = *phaseTwoPoreFlowOwned - *porePressureV*m_phaseTwoDensity*(Compressibility_rock + m_phaseTwoCompressibility)*Porosity*(1.0 - *phaseOneSaturationPoresYOwned)/B_formation_vol_factor_oil + Porosity/B_formation_vol_factor_oil*(*phaseOneSaturationPoresVOwned);
-        *phaseTwoFracFlowOwned = *phaseTwoFracFlowOwned - *fracturePressureV*m_phaseTwoDensity*(Compressibility_rock + m_phaseTwoCompressibility)*Porosity*(1.0 - *phaseOneSaturationFracYOwned)/B_formation_vol_factor_oil + Porosity/B_formation_vol_factor_oil*(*phaseOneSaturationFracVOwned);
       }
     }
-
   }
 
 }

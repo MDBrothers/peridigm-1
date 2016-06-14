@@ -217,7 +217,6 @@ namespace PeridigmNS {
   // multiphysics specific
   int m_criticalDilatationFieldId;
   int m_breaklessDiltatationFieldId;
-  int m_fractureDamagePrincipleDirectionFieldId;
   int m_porePressureYFieldId;
   int m_porePressureVFieldId;
   int m_fracturePressureYFieldId;
@@ -228,14 +227,15 @@ namespace PeridigmNS {
 	int m_phaseOneDensityInFractureFieldId;
 	int m_matrixPorosityFieldId;
 	int m_fracturePorosityFieldId;
-  int m_fractureConnectedFieldId;
 
-	double m_permeabilityScalar;
+	double m_matrixPermeabilityXX;
+  double m_matrixPermeabilityYY;
+  double m_matrixPermeabilityZZ;
   double m_phaseOneCompressibility;
   double m_phaseOneViscosity;
 	double m_criticalStretch;
 	double m_compressibilityRock;
-	double m_alpha;
+	double m_alphaBiot;
   };
 }
 

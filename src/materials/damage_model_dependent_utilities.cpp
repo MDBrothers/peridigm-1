@@ -44,7 +44,7 @@
 //
 // ************************************************************************
 //@HEADER
-
+#include <complex>
 #include <cmath>
 #include <Sacado.hpp>
 #include "damage_model_dependent_utilities.hpp"
@@ -169,21 +169,6 @@ namespace MATERIAL_EVALUATION {
     const double* deltaTemperature
   );
 
-  template void computeBreaklessDilatation<Sacado::Fad::DFad<double> >
-  (
-    const double* xOverlap,
-    const Sacado::Fad::DFad<double>* yOverlap,
-    const double *mOwned,
-    const double* volumeOverlap,
-    Sacado::Fad::DFad<double>* breaklessDilatationOwned,
-    const int* localNeighborList,
-    int numOwnedPoints,
-    double horizon,
-    const FunctionPointer OMEGA,
-    double thermalExpansionCoefficient,
-    const double* deltaTemperature
-  );
-
   template void computeBreaklessDilatation<std::complex<double> >
   (
     const double* xOverlap,
@@ -214,11 +199,11 @@ namespace MATERIAL_EVALUATION {
     int numOwnedPoints
   ){
     ScalarT* phiMatrixNP1 = matrixPorosityNP1;
-    const ScalarT* phiMatrixN = matrixPorosityN;
+    const double* phiMatrixN = matrixPorosityN;
     const ScalarT* porePressureYOwnedNP1 = porePressureYOverlapNP1;
-    const ScalarT* porePressureYOwnedN = porePressureYOverlapN;
+    const double* porePressureYOwnedN = porePressureYOverlapN;
     const ScalarT* thetaMatrixLocalNP1 = dilatationNP1; //The definition of matrix dilatation from Hisanao's formulation matches the standard definition of dilatation with a critical stretch damage model.
-    const ScalarT* thetaMatrixLocalN = dilatationN;
+    const double* thetaMatrixLocalN = dilatationN;
 
     for(int p=0; p<numOwnedPoints; p++,  phiMatrixNP1++, phiMatrixN++, porePressureYOwnedNP1++, porePressureYOwnedN++, thetaMatrixLocalNP1++, thetaMatrixLocalN++){
       *phiMatrixNP1 = (*phiMatrixN)*(1.0 - m_compressibilityRock*(*porePressureYOwnedNP1 - *porePressureYOwnedN)) +
@@ -255,6 +240,23 @@ namespace MATERIAL_EVALUATION {
     int numOwnedPoints
   );
 
+  //! Explicit template specialization for to compute the new fracture Porosity
+  template void computeFracturePorosity<std::complex<double> >
+  (
+    std::complex<double>* fracturePorosityNP1,
+    const std::complex<double>* breaklessDilatationOwnedNP1,
+    const double* criticalDilatationOwned,
+    int numOwnedPoints
+  ){
+    const std::complex<double>* thetaLocal = breaklessDilatationOwnedNP1; //The definition of local dilatation from Hisanao's formulation matches the standard definition of dilatation without a damage model.
+    const double* thetaCritical = criticalDilatationOwned;
+    std::complex<double>* fracturePorosity = fracturePorosityNP1;
+
+    for(int p=0; p<numOwnedPoints;p++, thetaLocal++, thetaCritical++, fracturePorosity++){
+      *fracturePorosity = *thetaLocal - *thetaCritical;
+      if(std::real(*fracturePorosity) < 0.0) *fracturePorosity = std::complex(0.0, std::imag(*fracturePorosity)); //No negative porosities, but preserve imaginary component.
+    }
+  }
 
   template<typename ScalarT>
   void computeFracturePorosity
@@ -274,24 +276,6 @@ namespace MATERIAL_EVALUATION {
     }
   }
 
-  //! Explicit template specialization for to compute the new fracture Porosity
-  template void computeFracturePorosity<std::complex<double> >
-  (
-    std::complex<double>* fracturePorosityNP1,
-    const std::complex<double>* breaklessDilatationOwnedNP1,
-    const double* criticalDilatationOwned,
-    int numOwnedPoints
-  ){
-    const std::complex<double>* thetaLocal = breaklessDilatationOwnedNP1; //The definition of local dilatation from Hisanao's formulation matches the standard definition of dilatation without a damage model.
-    const double* thetaCritical = criticalDilatationOwned;
-    std::complex<double>* fracturePorosity = fracturePorosityNP1;
-
-    for(int p=0; p<numOwnedPoints;p++, thetaLocal++, thetaCritical++, fracturePorosity++){
-      *fracturePorosity = *thetaLocal - *thetaCritical;
-      if(std::real(*fracturePorosity) < 0.0) *fracturePorosity = std::complex(0.0, std::imag(*fracturePorosity)); //No negative porosities, but preserve imaginary component.
-    }
-  }
-
   //! Explcit template instantiation for to compute the fracture Porosity
   template void computeFracturePorosity<double>
   (
@@ -302,4 +286,4 @@ namespace MATERIAL_EVALUATION {
   );
 
 
-}
+}}

@@ -50,7 +50,7 @@
 
 #include "poroelastic.hpp"
 #include "diffusion_models.hpp"
-#include "damage_model_dependent_utilities.hpp>"
+#include "damage_model_dependent_utilities.hpp"
 #include "material_utilities.h"
 
 #include <Teuchos_Assert.hpp>
@@ -68,7 +68,14 @@ PeridigmNS::TwoPhaseMultiphysicsElasticMaterial::TwoPhaseMultiphysicsElasticMate
     m_alpha(0.0),
     m_horizon(0.0),
     m_horizon_fracture(0.0),
-    m_applyAutomaticDifferentiationJacobian(true),
+    m_matrixPermeabilityXX(0.0),
+    m_matrixPermeabilityYY(0.0),
+    m_matrixPermeabilityZZ(0.0),
+    m_phaseOneViscosity(0.0),
+    m_criticalStretch(0.0),
+    m_alphaBiot(0.0),
+    m_compressibilityRock(0.0),
+    m_applyAutomaticDifferentiationJacobian(false),
     m_applySurfaceCorrectionFactor(false),
     m_applyThermalStrains(false),
     m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()),
@@ -82,7 +89,6 @@ PeridigmNS::TwoPhaseMultiphysicsElasticMaterial::TwoPhaseMultiphysicsElasticMate
     m_bondDamageFieldId(-1),
     m_surfaceCorrectionFactorFieldId(-1),
     m_deltaTemperatureFieldId(-1),
-    m_fractureDamagePrincipleDirectionFieldId(-1),
     m_porePressureYFieldId(-1),
     m_porePressureVFieldId(-1),
     m_fracturePressureYFieldId(-1),
@@ -95,19 +101,12 @@ PeridigmNS::TwoPhaseMultiphysicsElasticMaterial::TwoPhaseMultiphysicsElasticMate
     m_phaseOneFracFlowDensityFieldId(-1),
     m_phaseTwoPoreFlowDensityFieldId(-1),
     m_phaseTwoFracFlowDensityFieldId(-1),
-		m_permeabilityScalar(0.0),
-	  m_permeabilityCurveInflectionDamage(0.0),
-	  m_permeabilityAlpha(0.0),
-	  m_maxPermeability(0.0),
-	  m_phaseOneBasePerm(0.0),
-	  m_phaseTwoBasePerm(0.0),
-	  m_phaseOneDensity(0.0),
-	  m_phaseTwoDensity(0.0),
-	  m_phaseOneCompressibility(0.0),
-	  m_phaseTwoCompressibility(0.0),
-	  m_phaseOneViscosity(0.0),
-	  m_phaseTwoViscosity(0.0),
-		m_criticalStretch(0.0)
+    m_matrixPorosityFieldId(-1),
+    m_fracturePorosityFieldId(-1),
+    m_phaseOneDensityInPoresFieldId(-1),
+    m_phaseOneDensityInFractureFieldId(-1),
+    m_phaseTwoDensityInPoresFieldId(-1),
+    m_phaseTwoDensityInFractureFieldId(-1)
 {
   //! \todo Add meaningful asserts on material properties.
   m_bulkModulus = calculateBulkModulus(params);
@@ -115,36 +114,14 @@ PeridigmNS::TwoPhaseMultiphysicsElasticMaterial::TwoPhaseMultiphysicsElasticMate
   m_density = params.get<double>("Density");
   m_horizon = params.get<double>("Horizon");
   m_horizon_fracture = params.get<double>("Frac Diffusion Horizon");
-	m_permeabilityScalar = params.get<double>("Matrix Permeability");
-	m_permeabilityCurveInflectionDamage = params.get<double>("Matrix Permeability Curve Inflection Damage");
-	m_permeabilityAlpha = params.get<double>("Matrix Permeability Alpha");
-	m_maxPermeability = params.get<double>("Matrix Max Permeability");
-	m_phaseOneBasePerm = params.get<double>("Phase One Permeability");
-	m_phaseTwoBasePerm = params.get<double>("Phase Two Permeability");
-	m_phaseOneDensity = params.get<double>("Phase One Density");
-  m_phaseTwoDensity = params.get<double>("Phase Two Density");
-	m_phaseOneCompressibility = params.get<double>("Phase One Compressibility");
-  m_phaseTwoCompressibility = params.get<double>("Phase Two Compressibility");
+	m_matrixPermeabilityXX = params.get<double>("Matrix Permeability XX");
+  m_matrixPermeabilityYY = params.get<double>("Matrix Permeability YY");
+  m_matrixPermeabilityZZ = params.get<double>("Matrix Permeability ZZ");
 	m_phaseOneViscosity = params.get<double>("Phase One Viscosity");
-	m_phaseTwoViscosity = params.get<double>("Phase Two Viscosity");
+  m_phaseTwoViscosity = params.get<double>("Phase Two Viscosity");
 	m_criticalStretch = params.get<double>("Material Duplicate Critical Stretch");
-
-  materialProperties["Density"] = m_density;
-  materialProperties["Horizon"] = m_horizon;
-  materialProperties["Horizon Frac"] = m_horizon_fracture;
-  materialProperties["Phase One Permeability"] = m_phaseOneBasePerm;
-  materialProperties["Phase Two Permeability"] = m_phaseTwoBasePerm;
-  materialProperties["Phase One Density"] = m_phaseOneDensity;
-  materialProperties["Phase Two Density"] = m_phaseTwoDensity;
-  materialProperties["Phase One Compressibility"] = m_phaseOneCompressibility;
-  materialProperties["Phase Two Compressibility"] = m_phaseTwoCompressibility;
-  materialProperties["Phase One Viscosity"] = m_phaseOneViscosity;
-  materialProperties["Phase Two Viscosity"] = m_phaseTwoViscosity;
-  materialProperties["Matrix Permeability Curve Inflection Damage"] = m_permeabilityCurveInflectionDamage;
-	materialProperties["Matrix Permeability Alpha"] = m_permeabilityAlpha;
-	materialProperties["Matrix Max Permeability"] = m_maxPermeability;
-	materialProperties["Matrix Permeability"] = m_permeabilityScalar;
-  materialProperties["Material Dupicate Critical Stretch"] = m_criticalStretch;
+  m_alphaBiot = params.get<double>("Poroelasticity Constant");
+  m_compressibilityRock = params.get<double>("Compressibility Rock");
 
   if(params.isParameter("Apply Automatic Differentiation Jacobian"))
     m_applyAutomaticDifferentiationJacobian = params.get<bool>("Apply Automatic Differentiation Jacobian");

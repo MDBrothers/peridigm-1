@@ -166,30 +166,6 @@ namespace MATERIAL_EVALUATION{
     const double* deltaTemperature
   );
 
-  /** Explicit template instantiation for Sacado::Fad::DFad<double>. */
-  template void computeInternalForceLinearElasticCoupled<Sacado::Fad::DFad<double> >
-  (
-    const double* xOverlap,
-    const Sacado::Fad::DFad<double>* yOverlap,
-    const Sacado::Fad::DFad<double>* porePressureYOverlap,
-  	const Sacado::Fad::DFad<double>* fracturePressureYOverlap,
-    const double* mOwned,
-    const double* volumeOverlap,
-    const Sacado::Fad::DFad<double>* dilatationOwned,
-    const double* damage,
-    const double* bondDamage,
-    const double* dsfOwned,
-    Sacado::Fad::DFad<double>* fInternalOverlap,
-    const int*  localNeighborList,
-    int numOwnedPoints,
-    const double BULK_MODULUS,
-    const double SHEAR_MODULUS,
-    const double horizon,
-    const double m_alpha,
-    const double thermalExpansionCoefficient,
-    const double* deltaTemperature
-  );
-
   /** Explicit template instantiation for std::complex<double>. */
   template void computeInternalForceLinearElasticCoupled<std::complex<double> >
   (

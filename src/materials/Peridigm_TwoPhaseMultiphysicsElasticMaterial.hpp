@@ -217,33 +217,38 @@ namespace PeridigmNS {
   // multiphysics specific
   int m_criticalDilatationFieldId;
   int m_breaklessDiltatationFieldId;
-  int m_fractureDamagePrincipleDirectionFieldId;
+
   int m_porePressureYFieldId;
   int m_porePressureVFieldId;
   int m_fracturePressureYFieldId;
   int m_fracturePressureVFieldId;
+
   int m_phaseOneSaturationPoresYFieldId;
   int m_phaseOneSaturationPoresVFieldId;
   int m_phaseOneSaturationFracYFieldId;
   int m_phaseOneSaturationFracVFieldId;
+
   int m_phaseOnePoreFlowDensityFieldId;
   int m_phaseOneFracFlowDensityFieldId;
   int m_phaseTwoPoreFlowDensityFieldId;
   int m_phaseTwoFracFlowDensityFieldId;
 
-	double m_permeabilityScalar;
-  double m_permeabilityCurveInflectionDamage;
-  double m_permeabilityAlpha;
-  double m_maxPermeability;
-  double m_phaseOneBasePerm;
-  double m_phaseTwoBasePerm;
-  double m_phaseOneDensity;
-  double m_phaseTwoDensity;
-  double m_phaseOneCompressibility;
-  double m_phaseTwoCompressibility;
+  int m_phaseOneDensityInPoresFieldId;
+	int m_phaseOneDensityInFractureFieldId;
+  int m_phaseTwoDensityInPoresFieldId;
+  int m_phaseTwoDensityInFractureFieldId;
+
+	int m_matrixPorosityFieldId;
+	int m_fracturePorosityFieldId;
+
+	double m_matrixPermeabilityXX;
+  double m_matrixPermeabilityYY;
+  double m_matrixPermeabilityZZ;
   double m_phaseOneViscosity;
   double m_phaseTwoViscosity;
 	double m_criticalStretch;
+	double m_compressibilityRock;
+	double m_alphaBiot;
   };
 }
 
