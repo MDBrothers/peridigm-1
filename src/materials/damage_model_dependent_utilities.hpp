@@ -111,6 +111,15 @@ namespace MATERIAL_EVALUATION {
     int numOwnedPoints
   );
 
+  //! Templates not sufficient for complex use case
+  void computeFracturePorosityComplex
+  (
+    std::complex<double>* fracturePorosityNP1,
+    const std::complex<double>* breaklessDilatationOwnedNP1,
+    const double* criticalDilatationOwned,
+    int numOwnedPoints
+  );
+
 }
 
 #endif // DMODL_DEP_UTILS

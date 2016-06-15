@@ -160,9 +160,9 @@ template void computeInternalForceLinearElastic<double>
     int numOwnedPoints,
     double BULK_MODULUS,
     double SHEAR_MODULUS,
-        double horizon,
-        double thermalExpansionCoefficient,
-        const double* deltaTemperature
+    double horizon,
+    double thermalExpansionCoefficient,
+    const double* deltaTemperature
  );
 
 /** Explicit template instantiation for Sacado::Fad::DFad<double>. */
@@ -180,9 +180,9 @@ template void computeInternalForceLinearElastic<Sacado::Fad::DFad<double> >
     int numOwnedPoints,
     double BULK_MODULUS,
     double SHEAR_MODULUS,
-        double horizon,
-        double thermalExpansionCoefficient,
-        const double* deltaTemperature
+    double horizon,
+    double thermalExpansionCoefficient,
+    const double* deltaTemperature
 );
 
 }

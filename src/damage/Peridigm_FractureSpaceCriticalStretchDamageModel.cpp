@@ -1,4 +1,4 @@
-/*! \file Peridigm_TwoPhaseMultiphysicsCriticalStretchDamageModel.cpp */
+/*! \file Peridigm_FractureSpaceCriticalStretchDamageModel.cpp */
 
 //@HEADER
 // ************************************************************************
@@ -50,7 +50,7 @@
 
 using namespace std;
 
-PeridigmNS::TwoPhaseMultiphysicsCriticalStretchDamageModel::TwoPhaseMultiphysicsCriticalStretchDamageModel(const Teuchos::ParameterList& params)
+PeridigmNS::FractureSpaceCriticalStretchDamageModel::FractureSpaceCriticalStretchDamageModel(const Teuchos::ParameterList& params)
   : DamageModel(params), m_applyThermalStrains(false), m_modelCoordinatesFieldId(-1), m_coordinatesFieldId(-1), m_damageFieldId(-1), m_bondDamageFieldId(-1), m_deltaTemperatureFieldId(-1)
 {
   m_criticalStretch = params.get<double>("Critical Stretch");
@@ -60,8 +60,8 @@ PeridigmNS::TwoPhaseMultiphysicsCriticalStretchDamageModel::TwoPhaseMultiphysics
     m_applyThermalStrains = true;
   }
 
-  if(params.isSublist("Two Phase Multiphysics Bond Filters")){
-    myParams = Teuchos::RCP<Teuchos::ParameterList>( new Teuchos::ParameterList(params.sublist("Two Phase Multiphysics Bond Filters")) );
+  if(params.isSublist("Multiphysics Bond Filters")){
+    myParams = Teuchos::RCP<Teuchos::ParameterList>( new Teuchos::ParameterList(params.sublist("Multiphysics Bond Filters")) );
     m_initialBondFiltersPresent = true;
   }
   else
@@ -87,24 +87,22 @@ PeridigmNS::TwoPhaseMultiphysicsCriticalStretchDamageModel::TwoPhaseMultiphysics
 
 }
 
-PeridigmNS::TwoPhaseMultiphysicsCriticalStretchDamageModel::~TwoPhaseMultiphysicsCriticalStretchDamageModel()
+PeridigmNS::FractureSpaceCriticalStretchDamageModel::~FractureSpaceCriticalStretchDamageModel()
 {
 }
 
 void
-PeridigmNS::TwoPhaseMultiphysicsCriticalStretchDamageModel::initialize(const double dt,
+PeridigmNS::FractureSpaceCriticalStretchDamageModel::initialize(const double dt,
                                                    const int numOwnedPoints,
                                                    const int* ownedIDs,
                                                    const int* neighborhoodList,
                                                    PeridigmNS::DataManager& dataManager) const
 {
-  double *previousDamage, *damage, *bondDamage, *previousBondDamage, *x;//, *previousFractureConnected, *fractureConnected;
+  double *previousDamage, *damage, *bondDamage, *previousBondDamage, *x;
   dataManager.getData(m_damageFieldId, PeridigmField::STEP_N)->ExtractView(&previousDamage);
   dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&previousBondDamage);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
-  //dataManager.getData(m_fractureConnectedFieldId, PeridigmField::STEP_N)->ExtractView(&previousFractureConnected);
-  //dataManager.getData(m_fractureConnectedFieldId, PeridigmField::STEP_NP1)->ExtractView(&fractureConnected);
 
   // Get positional data for bond filtering too
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&x);
@@ -195,14 +193,12 @@ PeridigmNS::TwoPhaseMultiphysicsCriticalStretchDamageModel::initialize(const dou
       totalDamage = 0.0;
     damage[nodeId] = totalDamage;
     previousDamage[nodeId] = totalDamage;
-    //fractureConnected[nodeId] = 1.0; // Nodes damaged by bond filters are considered connected to the main fracture.
-    //previousFractureConnected[nodeId] = 1.0;
   }
 
 }
 
 void
-PeridigmNS::TwoPhaseMultiphysicsCriticalStretchDamageModel::computeDamage(const double dt,
+PeridigmNS::FractureSpaceCriticalStretchDamageModel::computeDamage(const double dt,
                                                       const int numOwnedPoints,
                                                       const int* ownedIDs,
                                                       const int* neighborhoodList,
@@ -213,8 +209,6 @@ PeridigmNS::TwoPhaseMultiphysicsCriticalStretchDamageModel::computeDamage(const 
   dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&y);
   dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
-  //dataManager.getData(m_fractureConnectedFieldId, PeridigmField::STEP_NP1)->ExtractView(&fractureConnectedNP1);
-  //dataManager.getData(m_fractureConnectedFieldId, PeridigmField::STEP_N)->ExtractView(&fractureConnectedN);
   deltaTemperature = NULL;
   if(m_applyThermalStrains)
     dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&deltaTemperature);
@@ -229,7 +223,6 @@ PeridigmNS::TwoPhaseMultiphysicsCriticalStretchDamageModel::computeDamage(const 
 
   // Update the bond damage
   // Break bonds if the extension is greater than the critical extension
-  //bool thereAreNewBrokenBonds=false;
 
   for(iID=0 ; iID<numOwnedPoints ; ++iID){
   nodeId = ownedIDs[iID];
@@ -256,19 +249,12 @@ PeridigmNS::TwoPhaseMultiphysicsCriticalStretchDamageModel::computeDamage(const 
         trialDamage = 1.0;
       if(trialDamage > bondDamageNP1[bondIndex]){
         bondDamageNP1[bondIndex] = trialDamage;
-      //  if(fractureConnectedN[neighborID]==1.0) fractureConnectedNP1[nodeId]==1.0; //If I become damaged and my neighbor was previously fracture connected, I become fracture connected too.
-      //thereAreNewBrokenBonds=true;
       }
       bondIndex += 1;
     }
   }
 
-  //if(thereAreNewBrokenBonds) std::cout << "New broken bonds\n";
-  //recompute the fracture direction
-  //computeLengthWeightedNormalizedFracDirection(numOwnedPoints, ownedIDs, neighborhoodList, dataManager);
-
   //  Update the element damage (percent of bonds broken)
-
   neighborhoodListIndex = 0;
   bondIndex = 0;
   for(iID=0 ; iID<numOwnedPoints ; ++iID){
@@ -278,7 +264,6 @@ PeridigmNS::TwoPhaseMultiphysicsCriticalStretchDamageModel::computeDamage(const 
     totalDamage = 0.0;
     for(iNID=0 ; iNID<numNeighbors ; ++iNID){
       totalDamage += bondDamageNP1[bondIndex++];
-      if(damage[])
     }
     if(numNeighbors > 0)
       totalDamage /= numNeighbors;

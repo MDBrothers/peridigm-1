@@ -170,6 +170,7 @@ namespace MATERIAL_EVALUATION {
       const double m_horizon_fracture,
       const double deltaTime,
       const double* deltaTemperature
+
     )
     {
       /*
@@ -292,7 +293,6 @@ namespace MATERIAL_EVALUATION {
       const double* fracturePressureVOverlap,
       const double* volumeOverlap,
       const double* damage,
-      const double* principleDamageDirection,
       const double* matrixPorosityNP1,
       const double* matrixPorosityN,
       const double* fracturePorosityNP1,
@@ -325,7 +325,6 @@ namespace MATERIAL_EVALUATION {
       const std::complex<double> * fracturePressureVOverlap,
       const double* volumeOverlap,
       const double* damage,
-      const double* principleDamageDirection,
       const std::complex<double> * matrixPorosityNP1,
       const double * matrixPorosityN,
       const std::complex<double> * fracturePorosityNP1,
@@ -380,7 +379,7 @@ namespace MATERIAL_EVALUATION {
       double cellVolume;
       std::complex<double> phaseOnePorePerm,  dPorePressure, dFracPressure;
       std::complex<double> dFracMinusPorePress, Y_dx, Y_dy, Y_dz, dY, fracPermeability;
-      std::complex<double> phaseOneFracPerm; permeabilityTrace;
+      std::complex<double> phaseOneFracPerm, permeabilityTrace;
       std::complex<double> scalarPhaseOnePoreFlow, scalarPhaseOneFracFlow, phaseOneRelPermFrac;
       std::complex<double> scalarPhaseOneFracToPoreFlow, omegaPores, omegaFrac, fracWidth;
 
@@ -397,9 +396,9 @@ namespace MATERIAL_EVALUATION {
         double selfCellVolume = v[p];
         const std::complex<double> *Y = yOwned;
         const std::complex<double> *porePressureY = porePressureYOwned;
-        const double *porePressureV = porePressureVOwned;
+        const std::complex<double> *porePressureV = porePressureVOwned;
         const std::complex<double> *fracturePressureY = fracturePressureYOwned;
-        const double *fracturePressureV = fracturePressureVOwned;
+        const std::complex<double> *fracturePressureV = fracturePressureVOwned;
 
         // Fracture permeability
         fracWidth = 2.0*m_horizon/3.0*(*fracturePorosityNP1Owned);  //TODO replace m_horizon/3.0 with actual grid spacing
@@ -709,7 +708,7 @@ namespace MATERIAL_EVALUATION {
       const double* deltaTemperature
     );
 
-    /*Because the complex case needs a difference argument pattern we need something
+    /*Because the complex case needs a different argument pattern we need something
     different than templates. */
     void computeInternalFlowComplex
     (
@@ -798,7 +797,7 @@ namespace MATERIAL_EVALUATION {
       double cellVolume;
       std::complex<double> phaseOnePorePerm, phaseTwoPorePerm, permeabilityTrace;
       std::complex<double> dPorePressure, dFracPressure, dFracMinusPorePress, Y_dx, Y_dy, Y_dz, dY, fracPermeability;
-      std::complex<double> phaseOneFracPerm, phaseTwoFracPerm, phaseOneRelPermPores;
+      std::complex<double> phaseOneFracPerm, phaseTwoFracPerm, phaseOneRelPermPores, fracWidth;
       std::complex<double> phaseOneRelPermFrac, phaseTwoRelPermPores, phaseTwoRelPermFrac, satStarPores, satStarFrac;
       std::complex<double> scalarPhaseOnePoreFlow, scalarPhaseOneFracFlow, scalarPhaseTwoPoreFlow, scalarPhaseTwoFracFlow;
       std::complex<double> scalarPhaseOneFracToPoreFlow, scalarPhaseTwoFracToPoreFlow, omegaPores, omegaFrac;

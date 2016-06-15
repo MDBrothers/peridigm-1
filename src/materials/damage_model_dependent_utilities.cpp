@@ -217,7 +217,7 @@ namespace MATERIAL_EVALUATION {
     std::complex<double>* matrixPorosityNP1,
     const double* matrixPorosityN,
     const std::complex<double>* porePressureYOverlapNP1,
-    const double porePressureYOverlapN,
+    const double* porePressureYOverlapN,
     const std::complex<double>* dilatationNP1,
     const double* dilatationN,
     const double m_compressibilityRock,
@@ -236,12 +236,11 @@ namespace MATERIAL_EVALUATION {
     const double* dilatationN,
     const double m_compressibilityRock,
     const double m_alpha,
-    const int* localNeighborList,
     int numOwnedPoints
   );
 
-  //! Explicit template specialization for to compute the new fracture Porosity
-  template void computeFracturePorosity<std::complex<double> >
+  //! Templates not sufficient for complex use case
+  void computeFracturePorosityComplex
   (
     std::complex<double>* fracturePorosityNP1,
     const std::complex<double>* breaklessDilatationOwnedNP1,
@@ -254,7 +253,7 @@ namespace MATERIAL_EVALUATION {
 
     for(int p=0; p<numOwnedPoints;p++, thetaLocal++, thetaCritical++, fracturePorosity++){
       *fracturePorosity = *thetaLocal - *thetaCritical;
-      if(std::real(*fracturePorosity) < 0.0) *fracturePorosity = std::complex(0.0, std::imag(*fracturePorosity)); //No negative porosities, but preserve imaginary component.
+      if(std::real(*fracturePorosity) < 0.0) *fracturePorosity = std::complex<double>(0.0, std::imag(*fracturePorosity)); //No negative porosities, but preserve imaginary component.
     }
   }
 
@@ -286,4 +285,4 @@ namespace MATERIAL_EVALUATION {
   );
 
 
-}}
+}

@@ -149,7 +149,6 @@ PeridigmNS::TwoPhaseMultiphysicsElasticMaterial::TwoPhaseMultiphysicsElasticMate
   m_surfaceCorrectionFactorFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Surface_Correction_Factor");
 
   //Multiphysics field variables
-  m_fractureDamagePrincipleDirectionFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Frac_Damage_Principle_Direction");
   m_criticalDilatationFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Critical_Dilatation");
   m_breaklessDiltatationFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Breakless_Dilatation");
   m_porePressureYFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Pore_Pressure_Y");
@@ -174,7 +173,6 @@ PeridigmNS::TwoPhaseMultiphysicsElasticMaterial::TwoPhaseMultiphysicsElasticMate
   m_fieldIds.push_back(m_dilatationFieldId);
   m_fieldIds.push_back(m_criticalDilatationFieldId);
   m_fieldIds.push_back(m_breaklessDiltatationFieldId);
-  m_fieldIds.push_back(m_fractureDamagePrincipleDirectionFieldId);
   m_fieldIds.push_back(m_criticalDilatationFieldId);
   m_fieldIds.push_back(m_breaklessDiltatationFieldId);
   m_fieldIds.push_back(m_porePressureYFieldId);
@@ -253,7 +251,7 @@ PeridigmNS::TwoPhaseMultiphysicsElasticMaterial::computeForce(const double dt,
 
   // Extract pointers to the underlying data
   double *x, *y, *cellVolume, *weightedVolume, *dilatation, *criticalDilatation, *breaklessDilatation;
-  double *bondDamage, *force, *scf, *deltaTemperature, *principleDamageDirection;
+  double *bondDamage, *force, *scf, *deltaTemperature;
   double *damage, *porePressureY, *porePressureV, *fracturePressureY, *fracturePressureV;
   double *phaseOnePoreFlow, *phaseOneFracFlow, *phaseTwoPoreFlow, *phaseTwoFracFlow;
   double *phaseOneSaturationPoresY, *phaseOneSaturationPoresV, *phaseOneSaturationFracY, *phaseOneSaturationFracV;
@@ -281,15 +279,14 @@ PeridigmNS::TwoPhaseMultiphysicsElasticMaterial::computeForce(const double dt,
   dataManager.getData(m_phaseOneFracFlowDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&phaseOneFracFlow);
   dataManager.getData(m_phaseTwoPoreFlowDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&phaseTwoPoreFlow);
   dataManager.getData(m_phaseTwoFracFlowDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&phaseTwoFracFlow);
-  dataManager.getData(m_fractureDamagePrincipleDirectionFieldId, PeridigmField::STEP_NP1)->ExtractView(&principleDamageDirection);
 
   deltaTemperature = NULL;
   if(m_applyThermalStrains) dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&deltaTemperature);
 
-  MATERIAL_EVALUATION::computeBreaklessDilatation(x,y,weightedVolume,cellVolume,breaklessDilatation,neighborhoodList,numOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
-  MATERIAL_EVALUATION::computeDilatation(x,y,weightedVolume,cellVolume,bondDamage,dilatation,neighborhoodList,numOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
-  MATERIAL_EVALUATION::computeInternalForceLinearElasticCoupled(x,y,porePressureY,weightedVolume,cellVolume,dilatation,damage,bondDamage,scf,force,neighborhoodList,numOwnedPoints,m_bulkModulus,m_shearModulus,m_horizon,m_alpha,deltaTemperature);
-  MATERIAL_EVALUATION::computeInternalFlow(y,porePressureY,porePressureV,fracturePressureY,fracturePressureV,phaseOneSaturationPoresY,phaseOneSaturationPoresV,phaseOneSaturationFracY,phaseOneSaturationFracV,cellVolume,damage,principleDamageDirection,criticalDilatation,breaklessDilatation,phaseOnePoreFlow,phaseOneFracFlow,phaseTwoPoreFlow,phaseTwoFracFlow,neighborhoodList,numOwnedPoints,m_permeabilityScalar,m_permeabilityCurveInflectionDamage,m_permeabilityAlpha,m_maxPermeability,m_phaseOneBasePerm,m_phaseTwoBasePerm,m_phaseOneDensity,m_phaseTwoDensity,m_phaseOneCompressibility,m_phaseTwoCompressibility,m_phaseOneViscosity,m_phaseTwoViscosity,m_horizon,m_horizon_fracture,deltaTemperature);
+  //MATERIAL_EVALUATION::computeBreaklessDilatation(x,y,weightedVolume,cellVolume,breaklessDilatation,neighborhoodList,numOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
+//  MATERIAL_EVALUATION::computeDilatation(x,y,weightedVolume,cellVolume,bondDamage,dilatation,neighborhoodList,numOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
+//  MATERIAL_EVALUATION::computeInternalForceLinearElasticCoupled(x,y,porePressureY,weightedVolume,cellVolume,dilatation,damage,bondDamage,scf,force,neighborhoodList,numOwnedPoints,m_bulkModulus,m_shearModulus,m_horizon,m_alpha,deltaTemperature);
+//  MATERIAL_EVALUATION::computeInternalFlow(y,porePressureY,porePressureV,fracturePressureY,fracturePressureV,phaseOneSaturationPoresY,phaseOneSaturationPoresV,phaseOneSaturationFracY,phaseOneSaturationFracV,cellVolume,damage,criticalDilatation,breaklessDilatation,phaseOnePoreFlow,phaseOneFracFlow,phaseTwoPoreFlow,phaseTwoFracFlow,neighborhoodList,numOwnedPoints,m_permeabilityScalar,m_permeabilityCurveInflectionDamage,m_permeabilityAlpha,m_maxPermeability,m_phaseOneBasePerm,m_phaseTwoBasePerm,m_phaseOneDensity,m_phaseTwoDensity,m_phaseOneCompressibility,m_phaseTwoCompressibility,m_phaseOneViscosity,m_phaseTwoViscosity,m_horizon,m_horizon_fracture,deltaTemperature);
 }
 
 void
@@ -384,7 +381,7 @@ PeridigmNS::TwoPhaseMultiphysicsElasticMaterial::computeAutomaticDifferentiation
                                                                      PeridigmNS::SerialMatrix& jacobian,
                                                                      PeridigmNS::Material::JacobianType jacobianType) const
 {
-  // To reduce memory re-allocation, use static variable to store Fad types for
+  /*// To reduce memory re-allocation, use static variable to store Fad types for
   // current coordinates (independent variables).
   static vector<Sacado::Fad::DFad<double> > y_AD;
   static vector<Sacado::Fad::DFad<double> > porePressureY_AD;
@@ -450,7 +447,7 @@ PeridigmNS::TwoPhaseMultiphysicsElasticMaterial::computeAutomaticDifferentiation
 
     // Extract pointers to the underlying data
     double *x, *y, *cellVolume, *weightedVolume, *dilatation, *criticalDilatation, *breaklessDilatation;
-    double *bondDamage, *force, *scf, *deltaTemperature, *principleDamageDirection;
+    double *bondDamage, *force, *scf, *deltaTemperature;
     double *damage, *porePressureY, *porePressureV, *fracturePressureY, *fracturePressureV;
     double *phaseOnePoreFlow, *phaseOneFracFlow, *phaseTwoPoreFlow, *phaseTwoFracFlow;
     double *phaseOneSaturationPoresY, *phaseOneSaturationPoresV, *phaseOneSaturationFracY, *phaseOneSaturationFracV;
@@ -464,7 +461,6 @@ PeridigmNS::TwoPhaseMultiphysicsElasticMaterial::computeAutomaticDifferentiation
     tempDataManager.getData(m_breaklessDiltatationFieldId, PeridigmField::STEP_NP1)->ExtractView(&breaklessDilatation);
     tempDataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
     tempDataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
-    tempDataManager.getData(m_fractureDamagePrincipleDirectionFieldId, PeridigmField::STEP_NP1)->ExtractView(&principleDamageDirection);
     tempDataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&force);
     tempDataManager.getData(m_surfaceCorrectionFactorFieldId, PeridigmField::STEP_NONE)->ExtractView(&scf);
     tempDataManager.getData(m_porePressureYFieldId, PeridigmField::STEP_NP1)->ExtractView(&porePressureY);
@@ -524,7 +520,7 @@ PeridigmNS::TwoPhaseMultiphysicsElasticMaterial::computeAutomaticDifferentiation
     MATERIAL_EVALUATION::computeBreaklessDilatation(x,&y_AD[0],weightedVolume,cellVolume,&breaklessDilatation_AD[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
     MATERIAL_EVALUATION::computeDilatation(x,&y_AD[0],weightedVolume,cellVolume,bondDamage,&dilatation_AD[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
     MATERIAL_EVALUATION::computeInternalForceLinearElasticCoupled(x,&y_AD[0],&porePressureY_AD[0],weightedVolume,cellVolume,&dilatation_AD[0],damage,bondDamage,scf,&force_AD[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_bulkModulus,m_shearModulus,m_horizon,m_alpha,deltaTemperature);
-    MATERIAL_EVALUATION::computeInternalFlow(&y_AD[0],&porePressureY_AD[0],porePressureV,&fracturePressureY_AD[0],fracturePressureV,&phaseOneSaturationPoresY_AD[0],phaseOneSaturationPoresV,&phaseOneSaturationFracY_AD[0],phaseOneSaturationFracV,cellVolume,damage,principleDamageDirection,criticalDilatation,&breaklessDilatation_AD[0],&phaseOnePoreFlow_AD[0],&phaseOneFracFlow_AD[0],&phaseTwoPoreFlow_AD[0],&phaseTwoFracFlow_AD[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_permeabilityScalar,m_permeabilityCurveInflectionDamage,m_permeabilityAlpha,m_maxPermeability,m_phaseOneBasePerm,m_phaseTwoBasePerm,m_phaseOneDensity,m_phaseTwoDensity,m_phaseOneCompressibility,m_phaseTwoCompressibility,m_phaseOneViscosity,m_phaseTwoViscosity,m_horizon,m_horizon_fracture,deltaTemperature);
+    MATERIAL_EVALUATION::computeInternalFlow(&y_AD[0],&porePressureY_AD[0],porePressureV,&fracturePressureY_AD[0],fracturePressureV,&phaseOneSaturationPoresY_AD[0],phaseOneSaturationPoresV,&phaseOneSaturationFracY_AD[0],phaseOneSaturationFracV,cellVolume,damage,criticalDilatation,&breaklessDilatation_AD[0],&phaseOnePoreFlow_AD[0],&phaseOneFracFlow_AD[0],&phaseTwoPoreFlow_AD[0],&phaseTwoFracFlow_AD[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_permeabilityScalar,m_permeabilityCurveInflectionDamage,m_permeabilityAlpha,m_maxPermeability,m_phaseOneBasePerm,m_phaseTwoBasePerm,m_phaseOneDensity,m_phaseTwoDensity,m_phaseOneCompressibility,m_phaseTwoCompressibility,m_phaseOneViscosity,m_phaseTwoViscosity,m_horizon,m_horizon_fracture,deltaTemperature);
 
     // Load derivative values into scratch matrix
     // Multiply by volume along the way to convert force density to force
@@ -558,7 +554,7 @@ PeridigmNS::TwoPhaseMultiphysicsElasticMaterial::computeAutomaticDifferentiation
     else // unknown jacobian type
       TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "**** Unknown Jacobian Type\n");
   }
-
+*/
 }
 
 void PeridigmNS::TwoPhaseMultiphysicsElasticMaterial::computeComplexStepFiniteDifferenceJacobian(const double dt,
@@ -569,6 +565,7 @@ void PeridigmNS::TwoPhaseMultiphysicsElasticMaterial::computeComplexStepFiniteDi
                                                            PeridigmNS::SerialMatrix& jacobian,
                                                            PeridigmNS::Material::JacobianType jacobianType) const
 {
+  /*
   // The Jacobian is of the form:
   //
   // dF_0x/dx_0  dF_0x/dy_0  dF_0x/dz_0  dF_0x/dx_1  dF_0x/dy_1  dF_0x/dz_1  ...  dF_0x/dx_n  dF_0x/dy_n  dF_0x/dz_n
@@ -663,7 +660,7 @@ void PeridigmNS::TwoPhaseMultiphysicsElasticMaterial::computeComplexStepFiniteDi
 
     // Extract pointers to the underlying data
     double *x, *y, *cellVolume, *weightedVolume, *dilatation, *criticalDilatation, *breaklessDilatation;
-    double *bondDamage, *force, *scf, *deltaTemperature, *principleDamageDirection;
+    double *bondDamage, *force, *scf, *deltaTemperature;
     double *damage, *porePressureY, *porePressureV, *fracturePressureY, *fracturePressureV;
     double *phaseOnePoreFlow, *phaseOneFracFlow, *phaseTwoPoreFlow, *phaseTwoFracFlow;
     double *phaseOneSaturationPoresY, *phaseOneSaturationPoresV, *phaseOneSaturationFracY, *phaseOneSaturationFracV;
@@ -677,7 +674,6 @@ void PeridigmNS::TwoPhaseMultiphysicsElasticMaterial::computeComplexStepFiniteDi
     tempDataManager.getData(m_breaklessDiltatationFieldId, PeridigmField::STEP_NP1)->ExtractView(&breaklessDilatation);
     tempDataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
     tempDataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
-    tempDataManager.getData(m_fractureDamagePrincipleDirectionFieldId, PeridigmField::STEP_NP1)->ExtractView(&principleDamageDirection);
     tempDataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&force);
     tempDataManager.getData(m_surfaceCorrectionFactorFieldId, PeridigmField::STEP_NONE)->ExtractView(&scf);
     tempDataManager.getData(m_porePressureYFieldId, PeridigmField::STEP_NP1)->ExtractView(&porePressureY);
@@ -770,7 +766,7 @@ void PeridigmNS::TwoPhaseMultiphysicsElasticMaterial::computeComplexStepFiniteDi
         MATERIAL_EVALUATION::computeBreaklessDilatation(x,&yComplex[0],weightedVolume,cellVolume,&breaklessDilatationComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
         MATERIAL_EVALUATION::computeDilatation(x,&yComplex[0],weightedVolume,cellVolume,bondDamage,&dilatationComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
         MATERIAL_EVALUATION::computeInternalForceLinearElasticCoupled(x,&yComplex[0],&porePressureYComplex[0],weightedVolume,cellVolume,&dilatationComplex[0],damage,bondDamage,scf,&forceComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_bulkModulus,m_shearModulus,m_horizon,m_alpha,deltaTemperature);
-        MATERIAL_EVALUATION::computeInternalFlowComplex(&yComplex[0],&porePressureYComplex[0],&porePressureVComplex[0],&fracturePressureYComplex[0],&fracturePressureVComplex[0],&phaseOneSaturationPoresYComplex[0],&phaseOneSaturationPoresVComplex[0],&phaseOneSaturationFracYComplex[0],&phaseOneSaturationFracVComplex[0],cellVolume,damage,principleDamageDirection,criticalDilatation,&breaklessDilatationComplex[0],&phaseOnePoreFlowComplex[0],&phaseOneFracFlowComplex[0],&phaseTwoPoreFlowComplex[0],&phaseTwoFracFlowComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_permeabilityScalar,m_permeabilityCurveInflectionDamage,m_permeabilityAlpha,m_maxPermeability,m_phaseOneBasePerm,m_phaseTwoBasePerm,m_phaseOneDensity,m_phaseTwoDensity,m_phaseOneCompressibility,m_phaseTwoCompressibility,m_phaseOneViscosity,m_phaseTwoViscosity,m_horizon,m_horizon_fracture,deltaTemperature);
+        MATERIAL_EVALUATION::computeInternalFlowComplex(&yComplex[0],&porePressureYComplex[0],&porePressureVComplex[0],&fracturePressureYComplex[0],&fracturePressureVComplex[0],&phaseOneSaturationPoresYComplex[0],&phaseOneSaturationPoresVComplex[0],&phaseOneSaturationFracYComplex[0],&phaseOneSaturationFracVComplex[0],cellVolume,damage,criticalDilatation,&breaklessDilatationComplex[0],&phaseOnePoreFlowComplex[0],&phaseOneFracFlowComplex[0],&phaseTwoPoreFlowComplex[0],&phaseTwoFracFlowComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_permeabilityScalar,m_permeabilityCurveInflectionDamage,m_permeabilityAlpha,m_maxPermeability,m_phaseOneBasePerm,m_phaseTwoBasePerm,m_phaseOneDensity,m_phaseTwoDensity,m_phaseOneCompressibility,m_phaseTwoCompressibility,m_phaseOneViscosity,m_phaseTwoViscosity,m_horizon,m_horizon_fracture,deltaTemperature);
         // Restore unperturbed value
         yComplex[3*perturbID+dof] = std::real(yComplex[3*perturbID+dof]);
         // Enter derivatives into a buffer before transferring them to the Jacobian
@@ -806,7 +802,7 @@ void PeridigmNS::TwoPhaseMultiphysicsElasticMaterial::computeComplexStepFiniteDi
       MATERIAL_EVALUATION::computeBreaklessDilatation(x,&yComplex[0],weightedVolume,cellVolume,&breaklessDilatationComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
       MATERIAL_EVALUATION::computeDilatation(x,&yComplex[0],weightedVolume,cellVolume,bondDamage,&dilatationComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
       MATERIAL_EVALUATION::computeInternalForceLinearElasticCoupled(x,&yComplex[0],&porePressureYComplex[0],weightedVolume,cellVolume,&dilatationComplex[0],damage,bondDamage,scf,&forceComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_bulkModulus,m_shearModulus,m_horizon,m_alpha,deltaTemperature);
-      MATERIAL_EVALUATION::computeInternalFlowComplex(&yComplex[0],&porePressureYComplex[0],&porePressureVComplex[0],&fracturePressureYComplex[0],&fracturePressureVComplex[0],&phaseOneSaturationPoresYComplex[0],&phaseOneSaturationPoresVComplex[0],&phaseOneSaturationFracYComplex[0],&phaseOneSaturationFracVComplex[0],cellVolume,damage,principleDamageDirection,criticalDilatation,&breaklessDilatationComplex[0],&phaseOnePoreFlowComplex[0],&phaseOneFracFlowComplex[0],&phaseTwoPoreFlowComplex[0],&phaseTwoFracFlowComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_permeabilityScalar,m_permeabilityCurveInflectionDamage,m_permeabilityAlpha,m_maxPermeability,m_phaseOneBasePerm,m_phaseTwoBasePerm,m_phaseOneDensity,m_phaseTwoDensity,m_phaseOneCompressibility,m_phaseTwoCompressibility,m_phaseOneViscosity,m_phaseTwoViscosity,m_horizon,m_horizon_fracture,deltaTemperature);
+      MATERIAL_EVALUATION::computeInternalFlowComplex(&yComplex[0],&porePressureYComplex[0],&porePressureVComplex[0],&fracturePressureYComplex[0],&fracturePressureVComplex[0],&phaseOneSaturationPoresYComplex[0],&phaseOneSaturationPoresVComplex[0],&phaseOneSaturationFracYComplex[0],&phaseOneSaturationFracVComplex[0],cellVolume,damage,criticalDilatation,&breaklessDilatationComplex[0],&phaseOnePoreFlowComplex[0],&phaseOneFracFlowComplex[0],&phaseTwoPoreFlowComplex[0],&phaseTwoFracFlowComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_permeabilityScalar,m_permeabilityCurveInflectionDamage,m_permeabilityAlpha,m_maxPermeability,m_phaseOneBasePerm,m_phaseTwoBasePerm,m_phaseOneDensity,m_phaseTwoDensity,m_phaseOneCompressibility,m_phaseTwoCompressibility,m_phaseOneViscosity,m_phaseTwoViscosity,m_horizon,m_horizon_fracture,deltaTemperature);
       // Restore unperturbed value
       porePressureYComplex[perturbID] = std::real(porePressureYComplex[perturbID]);
       porePressureVComplex[perturbID] = std::real(porePressureVComplex[perturbID]);
@@ -842,7 +838,7 @@ void PeridigmNS::TwoPhaseMultiphysicsElasticMaterial::computeComplexStepFiniteDi
       MATERIAL_EVALUATION::computeBreaklessDilatation(x,&yComplex[0],weightedVolume,cellVolume,&breaklessDilatationComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
       MATERIAL_EVALUATION::computeDilatation(x,&yComplex[0],weightedVolume,cellVolume,bondDamage,&dilatationComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
       MATERIAL_EVALUATION::computeInternalForceLinearElasticCoupled(x,&yComplex[0],&porePressureYComplex[0],weightedVolume,cellVolume,&dilatationComplex[0],damage,bondDamage,scf,&forceComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_bulkModulus,m_shearModulus,m_horizon,m_alpha,deltaTemperature);
-      MATERIAL_EVALUATION::computeInternalFlowComplex(&yComplex[0],&porePressureYComplex[0],&porePressureVComplex[0],&fracturePressureYComplex[0],&fracturePressureVComplex[0],&phaseOneSaturationPoresYComplex[0],&phaseOneSaturationPoresVComplex[0],&phaseOneSaturationFracYComplex[0],&phaseOneSaturationFracVComplex[0],cellVolume,damage,principleDamageDirection,criticalDilatation,&breaklessDilatationComplex[0],&phaseOnePoreFlowComplex[0],&phaseOneFracFlowComplex[0],&phaseTwoPoreFlowComplex[0],&phaseTwoFracFlowComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_permeabilityScalar,m_permeabilityCurveInflectionDamage,m_permeabilityAlpha,m_maxPermeability,m_phaseOneBasePerm,m_phaseTwoBasePerm,m_phaseOneDensity,m_phaseTwoDensity,m_phaseOneCompressibility,m_phaseTwoCompressibility,m_phaseOneViscosity,m_phaseTwoViscosity,m_horizon,m_horizon_fracture,deltaTemperature);
+      MATERIAL_EVALUATION::computeInternalFlowComplex(&yComplex[0],&porePressureYComplex[0],&porePressureVComplex[0],&fracturePressureYComplex[0],&fracturePressureVComplex[0],&phaseOneSaturationPoresYComplex[0],&phaseOneSaturationPoresVComplex[0],&phaseOneSaturationFracYComplex[0],&phaseOneSaturationFracVComplex[0],cellVolume,damage,criticalDilatation,&breaklessDilatationComplex[0],&phaseOnePoreFlowComplex[0],&phaseOneFracFlowComplex[0],&phaseTwoPoreFlowComplex[0],&phaseTwoFracFlowComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_permeabilityScalar,m_permeabilityCurveInflectionDamage,m_permeabilityAlpha,m_maxPermeability,m_phaseOneBasePerm,m_phaseTwoBasePerm,m_phaseOneDensity,m_phaseTwoDensity,m_phaseOneCompressibility,m_phaseTwoCompressibility,m_phaseOneViscosity,m_phaseTwoViscosity,m_horizon,m_horizon_fracture,deltaTemperature);
       // Restore unperturbed value
       fracturePressureYComplex[perturbID] = std::real(fracturePressureYComplex[perturbID]);
       fracturePressureVComplex[perturbID] = std::real(fracturePressureVComplex[perturbID]);
@@ -878,7 +874,7 @@ void PeridigmNS::TwoPhaseMultiphysicsElasticMaterial::computeComplexStepFiniteDi
       MATERIAL_EVALUATION::computeBreaklessDilatation(x,&yComplex[0],weightedVolume,cellVolume,&breaklessDilatationComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
       MATERIAL_EVALUATION::computeDilatation(x,&yComplex[0],weightedVolume,cellVolume,bondDamage,&dilatationComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
       MATERIAL_EVALUATION::computeInternalForceLinearElasticCoupled(x,&yComplex[0],&porePressureYComplex[0],weightedVolume,cellVolume,&dilatationComplex[0],damage,bondDamage,scf,&forceComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_bulkModulus,m_shearModulus,m_horizon,m_alpha,deltaTemperature);
-      MATERIAL_EVALUATION::computeInternalFlowComplex(&yComplex[0],&porePressureYComplex[0],&porePressureVComplex[0],&fracturePressureYComplex[0],&fracturePressureVComplex[0],&phaseOneSaturationPoresYComplex[0],&phaseOneSaturationPoresVComplex[0],&phaseOneSaturationFracYComplex[0],&phaseOneSaturationFracVComplex[0],cellVolume,damage,principleDamageDirection,criticalDilatation,&breaklessDilatationComplex[0],&phaseOnePoreFlowComplex[0],&phaseOneFracFlowComplex[0],&phaseTwoPoreFlowComplex[0],&phaseTwoFracFlowComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_permeabilityScalar,m_permeabilityCurveInflectionDamage,m_permeabilityAlpha,m_maxPermeability,m_phaseOneBasePerm,m_phaseTwoBasePerm,m_phaseOneDensity,m_phaseTwoDensity,m_phaseOneCompressibility,m_phaseTwoCompressibility,m_phaseOneViscosity,m_phaseTwoViscosity,m_horizon,m_horizon_fracture,deltaTemperature);
+      MATERIAL_EVALUATION::computeInternalFlowComplex(&yComplex[0],&porePressureYComplex[0],&porePressureVComplex[0],&fracturePressureYComplex[0],&fracturePressureVComplex[0],&phaseOneSaturationPoresYComplex[0],&phaseOneSaturationPoresVComplex[0],&phaseOneSaturationFracYComplex[0],&phaseOneSaturationFracVComplex[0],cellVolume,damage,criticalDilatation,&breaklessDilatationComplex[0],&phaseOnePoreFlowComplex[0],&phaseOneFracFlowComplex[0],&phaseTwoPoreFlowComplex[0],&phaseTwoFracFlowComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_permeabilityScalar,m_permeabilityCurveInflectionDamage,m_permeabilityAlpha,m_maxPermeability,m_phaseOneBasePerm,m_phaseTwoBasePerm,m_phaseOneDensity,m_phaseTwoDensity,m_phaseOneCompressibility,m_phaseTwoCompressibility,m_phaseOneViscosity,m_phaseTwoViscosity,m_horizon,m_horizon_fracture,deltaTemperature);
       // Restore unperturbed value
       phaseOneSaturationPoresYComplex[perturbID] = std::real(phaseOneSaturationPoresYComplex[perturbID]);
       phaseOneSaturationPoresVComplex[perturbID] = std::real(phaseOneSaturationPoresVComplex[perturbID]);
@@ -914,7 +910,7 @@ void PeridigmNS::TwoPhaseMultiphysicsElasticMaterial::computeComplexStepFiniteDi
       MATERIAL_EVALUATION::computeBreaklessDilatation(x,&yComplex[0],weightedVolume,cellVolume,&breaklessDilatationComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
       MATERIAL_EVALUATION::computeDilatation(x,&yComplex[0],weightedVolume,cellVolume,bondDamage,&dilatationComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
       MATERIAL_EVALUATION::computeInternalForceLinearElasticCoupled(x,&yComplex[0],&porePressureYComplex[0],weightedVolume,cellVolume,&dilatationComplex[0],damage,bondDamage,scf,&forceComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_bulkModulus,m_shearModulus,m_horizon,m_alpha,deltaTemperature);
-      MATERIAL_EVALUATION::computeInternalFlowComplex(&yComplex[0],&porePressureYComplex[0],&porePressureVComplex[0],&fracturePressureYComplex[0],&fracturePressureVComplex[0],&phaseOneSaturationPoresYComplex[0],&phaseOneSaturationPoresVComplex[0],&phaseOneSaturationFracYComplex[0],&phaseOneSaturationFracVComplex[0],cellVolume,damage,principleDamageDirection,criticalDilatation,&breaklessDilatationComplex[0],&phaseOnePoreFlowComplex[0],&phaseOneFracFlowComplex[0],&phaseTwoPoreFlowComplex[0],&phaseTwoFracFlowComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_permeabilityScalar,m_permeabilityCurveInflectionDamage,m_permeabilityAlpha,m_maxPermeability,m_phaseOneBasePerm,m_phaseTwoBasePerm,m_phaseOneDensity,m_phaseTwoDensity,m_phaseOneCompressibility,m_phaseTwoCompressibility,m_phaseOneViscosity,m_phaseTwoViscosity,m_horizon,m_horizon_fracture,deltaTemperature);
+      MATERIAL_EVALUATION::computeInternalFlowComplex(&yComplex[0],&porePressureYComplex[0],&porePressureVComplex[0],&fracturePressureYComplex[0],&fracturePressureVComplex[0],&phaseOneSaturationPoresYComplex[0],&phaseOneSaturationPoresVComplex[0],&phaseOneSaturationFracYComplex[0],&phaseOneSaturationFracVComplex[0],cellVolume,damage,criticalDilatation,&breaklessDilatationComplex[0],&phaseOnePoreFlowComplex[0],&phaseOneFracFlowComplex[0],&phaseTwoPoreFlowComplex[0],&phaseTwoFracFlowComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_permeabilityScalar,m_permeabilityCurveInflectionDamage,m_permeabilityAlpha,m_maxPermeability,m_phaseOneBasePerm,m_phaseTwoBasePerm,m_phaseOneDensity,m_phaseTwoDensity,m_phaseOneCompressibility,m_phaseTwoCompressibility,m_phaseOneViscosity,m_phaseTwoViscosity,m_horizon,m_horizon_fracture,deltaTemperature);
       // Restore unperturbed value
       phaseOneSaturationFracYComplex[perturbID] = std::real(phaseOneSaturationFracYComplex[perturbID]);
       phaseOneSaturationFracVComplex[perturbID] = std::real(phaseOneSaturationFracVComplex[perturbID]);
@@ -973,4 +969,5 @@ void PeridigmNS::TwoPhaseMultiphysicsElasticMaterial::computeComplexStepFiniteDi
     else // unknown jacobian type
       TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "**** Unknown Jacobian Type\n");
   }
+  */
 }

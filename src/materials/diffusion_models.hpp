@@ -120,7 +120,6 @@ namespace MATERIAL_EVALUATION {
       const std::complex<double> * fracturePressureVOverlap,
       const double* volumeOverlap,
       const double* damage,
-      const double* principleDamageDirection,
       const std::complex<double> * matrixPorosityNP1,
       const double * matrixPorosityN,
       const std::complex<double> * fracturePorosityNP1,
