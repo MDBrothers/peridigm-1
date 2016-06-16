@@ -82,6 +82,7 @@ void computeAndStoreInfluenceFunctionValues
   }
 }
 
+
 /**
  * Call this function on a single point 'X'
  * NOTE: neighPtr to should point to 'numNeigh' for 'X'
@@ -256,14 +257,13 @@ void computeDilatation
   const double *v = volumeOverlap;
   ScalarT *theta = dilatationOwned;
   double cellVolume;
-  ScalarT test;
   const int *neighPtr = localNeighborList;
   for(int p=0; p<numOwnedPoints;p++, xOwned+=3, yOwned+=3, deltaT++, m++, theta++){
     int numNeigh = *neighPtr; neighPtr++;
     const double *X = xOwned;
     const ScalarT *Y = yOwned;
     *theta = ScalarT(0.0);
-    test = ScalarT(0.0);
+
     for(int n=0;n<numNeigh;n++,neighPtr++,bondDamage++){
       int localId = *neighPtr;
       cellVolume = v[localId];
@@ -284,7 +284,7 @@ void computeDilatation
         e -= thermalExpansionCoefficient*(*deltaT)*d;
       double omega = OMEGA(d,horizon);
       *theta += 3.0*omega*(1.0-*bondDamage)*d*e*cellVolume/(*m);
-      test += 3.0*omega*(1.0-*bondDamage)*d*e*cellVolume/(*m);
+
     }
   }
 }
@@ -301,10 +301,10 @@ void computeDilatation<double>
     double* dilatationOwned,
     const int* localNeighborList,
     int numOwnedPoints,
-        double horizon,
+    double horizon,
     const FunctionPointer OMEGA,
-        double thermalExpansionCoefficient,
-        const double* deltaTemperature
+    double thermalExpansionCoefficient,
+    const double* deltaTemperature
  );
 
 
@@ -320,28 +320,28 @@ void computeDilatation<Sacado::Fad::DFad<double> >
     Sacado::Fad::DFad<double>* dilatationOwned,
     const int* localNeighborList,
     int numOwnedPoints,
-        double horizon,
+    double horizon,
     const FunctionPointer OMEGA,
-        double thermalExpansionCoefficient,
-        const double* deltaTemperature
+    double thermalExpansionCoefficient,
+    const double* deltaTemperature
  );
 
  /** Explicit template instantiation for std::complex<double>. */
  template
  void computeDilatation<std::complex<double> >
  (
-     const double* xOverlap,
-     const std::complex<double>* yOverlap,
-     const double *mOwned,
-     const double* volumeOverlap,
-     const double* bondDamage,
-     std::complex<double>* dilatationOwned,
-     const int* localNeighborList,
-     int numOwnedPoints,
-     double horizon,
-     const FunctionPointer OMEGA,
-     double thermalExpansionCoefficient,
-     const double* deltaTemperature
+    const double* xOverlap,
+    const std::complex<double>* yOverlap,
+    const double *mOwned,
+    const double* volumeOverlap,
+    const double* bondDamage,
+    std::complex<double>* dilatationOwned,
+    const int* localNeighborList,
+    int numOwnedPoints,
+    double horizon,
+    const FunctionPointer OMEGA,
+    double thermalExpansionCoefficient,
+    const double* deltaTemperature
   );
 
 /**
@@ -564,6 +564,7 @@ double computeWeightedVolume
   int numNeigh = *neighPtr; neighPtr++;
 //  std::cout << NAMESPACE <<"computeWeightedVolume\n";
 //  std::cout << "\tnumber of neighbors = " << numNeigh << std::endl;
+
   for(int n=0;n<numNeigh;n++,neighPtr++,bond_volume++){
     int localId = *neighPtr;
     const double *XP = &xOverlap[3*localId];

@@ -132,6 +132,7 @@ namespace MATERIAL_EVALUATION{
         fx = t * Y_dx / dY;
         fy = t * Y_dy / dY;
         fz = t * Y_dz / dY;
+
         *(fOwned+0) += fx*cellVolume;
         *(fOwned+1) += fy*cellVolume;
         *(fOwned+2) += fz*cellVolume;

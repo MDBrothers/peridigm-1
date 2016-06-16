@@ -150,6 +150,7 @@ namespace MATERIAL_EVALUATION {
           e -= thermalExpansionCoefficient*(*deltaT)*d;
         double omega = OMEGA(d,horizon);
         *theta += 3.0*omega*d*e*cellVolume/(*m);
+
       }
     }
   }

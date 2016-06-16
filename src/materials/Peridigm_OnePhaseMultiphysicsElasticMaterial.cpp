@@ -123,7 +123,6 @@ PeridigmNS::OnePhaseMultiphysicsElasticMaterial::OnePhaseMultiphysicsElasticMate
 
   if(params.isParameter("Thermal Expansion Coefficient")){
     m_alpha = params.get<double>("Thermal Expansion Coefficient");
-  materialProperties["Solid thermal expansion coefficient"] = m_alpha;
     m_applyThermalStrains = true;
   }
 
@@ -636,7 +635,7 @@ void PeridigmNS::OnePhaseMultiphysicsElasticMaterial::computeComplexStepFiniteDi
     double *x, *y, *cellVolume, *weightedVolume;
     double *dilatationN, *criticalDilatation;
     double *bondDamage, *damage, *force, *scf, *deltaTemperature;
-    double *phaseOneDensityInPores, *phaseOneDensityInFracture, *phaseOneDensityInPoresN, *phaseOneDensityInFractureN;
+    double *phaseOneDensityInPoresN, *phaseOneDensityInFractureN;
     double *matrixPorosityN, *fracturePorosityN;
     double *porePressureYN, *fracturePressureYN, *porePressureYNP1, *fracturePressureYNP1, *porePressureVNP1, *fracturePressureVNP1;
 
@@ -652,8 +651,8 @@ void PeridigmNS::OnePhaseMultiphysicsElasticMaterial::computeComplexStepFiniteDi
     tempDataManager.getData(m_porePressureYFieldId, PeridigmField::STEP_N)->ExtractView(&porePressureYN);
     tempDataManager.getData(m_fracturePressureYFieldId, PeridigmField::STEP_N)->ExtractView(&fracturePressureYN);
     tempDataManager.getData(m_porePressureYFieldId, PeridigmField::STEP_NP1)->ExtractView(&porePressureYNP1);
-    tempDataManager.getData(m_fracturePressureYFieldId, PeridigmField::STEP_NP1)->ExtractView(&fracturePressureYNP1);
     tempDataManager.getData(m_porePressureVFieldId, PeridigmField::STEP_NP1)->ExtractView(&porePressureVNP1);
+    tempDataManager.getData(m_fracturePressureYFieldId, PeridigmField::STEP_NP1)->ExtractView(&fracturePressureYNP1);
     tempDataManager.getData(m_fracturePressureVFieldId, PeridigmField::STEP_NP1)->ExtractView(&fracturePressureVNP1);
     tempDataManager.getData(m_phaseOneDensityInPoresFieldId, PeridigmField::STEP_N)->ExtractView(&phaseOneDensityInPoresN);
     tempDataManager.getData(m_phaseOneDensityInFractureFieldId, PeridigmField::STEP_N)->ExtractView(&phaseOneDensityInFractureN);
@@ -662,7 +661,6 @@ void PeridigmNS::OnePhaseMultiphysicsElasticMaterial::computeComplexStepFiniteDi
 
     deltaTemperature = NULL;
     if(m_applyThermalStrains) tempDataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&deltaTemperature);
-
 
     // Resize the temporary vectors
     if(yComplex.size() < (3*numEntries)){
@@ -730,14 +728,15 @@ void PeridigmNS::OnePhaseMultiphysicsElasticMaterial::computeComplexStepFiniteDi
         yComplex[3*perturbID+dof] += std::complex<double>(0.0, epsilon);
         //TODO if there is a viscous effect term, we need to perturb velocity alongside current configuration
         // Evaluate the model
-        MATERIAL_EVALUATION::computeBreaklessDilatation(x,&yComplex[0],weightedVolume,cellVolume,&breaklessDilatationComplex[0],neighborhoodList,numOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
-        MATERIAL_EVALUATION::computeDilatation(x,&yComplex[0],weightedVolume,cellVolume,bondDamage,&dilatationComplex[0],neighborhoodList,numOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
-        MATERIAL_EVALUATION::computeMatrixPorosity(&matrixPorosityComplex[0],matrixPorosityN,&porePressureYComplex[0],porePressureYN,&dilatationComplex[0],dilatationN,m_compressibilityRock,m_alphaBiot,numOwnedPoints);
-        MATERIAL_EVALUATION::computeFracturePorosityComplex(&fracturePorosityComplex[0],&breaklessDilatationComplex[0],criticalDilatation,numOwnedPoints);
-        MATERIAL_EVALUATION::computePhaseOneDensityInPores(&phaseOneDensityInPoresComplex[0],&porePressureYComplex[0],deltaTemperature,numOwnedPoints);
-        MATERIAL_EVALUATION::computePhaseOneDensityInFracture(&phaseOneDensityInFractureComplex[0],&fracturePressureYComplex[0],deltaTemperature,numOwnedPoints);
-        MATERIAL_EVALUATION::computeInternalForceLinearElasticCoupled(x,&yComplex[0],&porePressureYComplex[0],&fracturePressureYComplex[0],weightedVolume,cellVolume,&dilatationComplex[0],damage,bondDamage,scf,&forceComplex[0],neighborhoodList,numOwnedPoints,m_bulkModulus,m_shearModulus,m_horizon,m_alphaBiot,m_alpha,deltaTemperature);
-        MATERIAL_EVALUATION::ONE_PHASE::computeInternalFlowComplex(&yComplex[0],&porePressureYComplex[0],&porePressureVComplex[0],&fracturePressureYComplex[0],&fracturePressureVComplex[0],cellVolume,damage,&matrixPorosityComplex[0],matrixPorosityN,&fracturePorosityComplex[0],fracturePorosityN,&phaseOneDensityInPoresComplex[0],phaseOneDensityInPoresN,&phaseOneDensityInFractureComplex[0],phaseOneDensityInFractureN,&breaklessDilatationComplex[0],&phaseOnePoreFlowComplex[0],&phaseOneFracFlowComplex[0],neighborhoodList,numOwnedPoints,m_matrixPermeabilityXX,m_matrixPermeabilityYY,m_matrixPermeabilityZZ,m_phaseOneViscosity,m_horizon,m_horizon_fracture,dt,deltaTemperature);
+        MATERIAL_EVALUATION::computeBreaklessDilatation(x,&yComplex[0],weightedVolume,cellVolume,&breaklessDilatationComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
+        MATERIAL_EVALUATION::computeDilatation(x,&yComplex[0],weightedVolume,cellVolume,bondDamage,&dilatationComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
+        MATERIAL_EVALUATION::computeMatrixPorosity(&matrixPorosityComplex[0],matrixPorosityN,&porePressureYComplex[0],porePressureYN,&dilatationComplex[0],dilatationN,m_compressibilityRock,m_alphaBiot,tempNumOwnedPoints);
+        MATERIAL_EVALUATION::computeFracturePorosityComplex(&fracturePorosityComplex[0],&breaklessDilatationComplex[0],criticalDilatation,tempNumOwnedPoints);
+        MATERIAL_EVALUATION::computePhaseOneDensityInPores(&phaseOneDensityInPoresComplex[0],&porePressureYComplex[0],deltaTemperature,tempNumOwnedPoints);
+        MATERIAL_EVALUATION::computePhaseOneDensityInFracture(&phaseOneDensityInFractureComplex[0],&fracturePressureYComplex[0],deltaTemperature,tempNumOwnedPoints);
+        MATERIAL_EVALUATION::computeInternalForceLinearElasticCoupled(x,&yComplex[0],&porePressureYComplex[0],&fracturePressureYComplex[0],weightedVolume,cellVolume,&dilatationComplex[0],damage,bondDamage,scf,&forceComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_bulkModulus,m_shearModulus,m_horizon,m_alphaBiot,m_alpha,deltaTemperature);
+        MATERIAL_EVALUATION::ONE_PHASE::computeInternalFlowComplex(&yComplex[0],&porePressureYComplex[0],&porePressureVComplex[0],&fracturePressureYComplex[0],&fracturePressureVComplex[0],cellVolume,damage,&matrixPorosityComplex[0],matrixPorosityN,&fracturePorosityComplex[0],fracturePorosityN,&phaseOneDensityInPoresComplex[0],phaseOneDensityInPoresN,&phaseOneDensityInFractureComplex[0],phaseOneDensityInFractureN,&breaklessDilatationComplex[0],&phaseOnePoreFlowComplex[0],&phaseOneFracFlowComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_matrixPermeabilityXX,m_matrixPermeabilityYY,m_matrixPermeabilityZZ,m_phaseOneViscosity,m_horizon,m_horizon_fracture,dt,deltaTemperature);
+
         // Restore unperturbed value
         yComplex[3*perturbID+dof] = std::real(yComplex[3*perturbID+dof]);
         // Enter derivatives into a buffer before transferring them to the Jacobian
@@ -747,6 +746,7 @@ void PeridigmNS::OnePhaseMultiphysicsElasticMaterial::computeComplexStepFiniteDi
             dependentID = tempNeighborhoodList[i+1];
           else
             dependentID = 0;
+
           scratchMatrix(5*dependentID+0, 5*perturbID+dof) = std::imag( forceComplex[3*dependentID + 0]/epsilon );
           scratchMatrix(5*dependentID+1, 5*perturbID+dof) = std::imag( forceComplex[3*dependentID + 1]/epsilon );
           scratchMatrix(5*dependentID+2, 5*perturbID+dof) = std::imag( forceComplex[3*dependentID + 2]/epsilon );
@@ -766,14 +766,14 @@ void PeridigmNS::OnePhaseMultiphysicsElasticMaterial::computeComplexStepFiniteDi
       porePressureYComplex[perturbID] += std::complex<double>(0.0, epsilon);
       porePressureVComplex[perturbID] += std::complex<double>(0.0, epsilon/dt);
       // Evaluate the constitutive model
-      MATERIAL_EVALUATION::computeBreaklessDilatation(x,&yComplex[0],weightedVolume,cellVolume,&breaklessDilatationComplex[0],neighborhoodList,numOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
-      MATERIAL_EVALUATION::computeDilatation(x,&yComplex[0],weightedVolume,cellVolume,bondDamage,&dilatationComplex[0],neighborhoodList,numOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
-      MATERIAL_EVALUATION::computeMatrixPorosity(&matrixPorosityComplex[0],matrixPorosityN,&porePressureYComplex[0],porePressureYN,&dilatationComplex[0],dilatationN,m_compressibilityRock,m_alphaBiot,numOwnedPoints);
-      MATERIAL_EVALUATION::computeFracturePorosityComplex(&fracturePorosityComplex[0],&breaklessDilatationComplex[0],criticalDilatation,numOwnedPoints);
-      MATERIAL_EVALUATION::computePhaseOneDensityInPores(&phaseOneDensityInPoresComplex[0],&porePressureYComplex[0],deltaTemperature,numOwnedPoints);
-      MATERIAL_EVALUATION::computePhaseOneDensityInFracture(&phaseOneDensityInFractureComplex[0],&fracturePressureYComplex[0],deltaTemperature,numOwnedPoints);
-      MATERIAL_EVALUATION::computeInternalForceLinearElasticCoupled(x,&yComplex[0],&porePressureYComplex[0],&fracturePressureYComplex[0],weightedVolume,cellVolume,&dilatationComplex[0],damage,bondDamage,scf,&forceComplex[0],neighborhoodList,numOwnedPoints,m_bulkModulus,m_shearModulus,m_horizon,m_alphaBiot,m_alpha,deltaTemperature);
-      MATERIAL_EVALUATION::ONE_PHASE::computeInternalFlowComplex(&yComplex[0],&porePressureYComplex[0],&porePressureVComplex[0],&fracturePressureYComplex[0],&fracturePressureVComplex[0],cellVolume,damage,&matrixPorosityComplex[0],matrixPorosityN,&fracturePorosityComplex[0],fracturePorosityN,&phaseOneDensityInPoresComplex[0],phaseOneDensityInPoresN,&phaseOneDensityInFractureComplex[0],phaseOneDensityInFractureN,&breaklessDilatationComplex[0],&phaseOnePoreFlowComplex[0],&phaseOneFracFlowComplex[0],neighborhoodList,numOwnedPoints,m_matrixPermeabilityXX,m_matrixPermeabilityYY,m_matrixPermeabilityZZ,m_phaseOneViscosity,m_horizon,m_horizon_fracture,dt,deltaTemperature);
+      MATERIAL_EVALUATION::computeBreaklessDilatation(x,&yComplex[0],weightedVolume,cellVolume,&breaklessDilatationComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
+      MATERIAL_EVALUATION::computeDilatation(x,&yComplex[0],weightedVolume,cellVolume,bondDamage,&dilatationComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
+      MATERIAL_EVALUATION::computeMatrixPorosity(&matrixPorosityComplex[0],matrixPorosityN,&porePressureYComplex[0],porePressureYN,&dilatationComplex[0],dilatationN,m_compressibilityRock,m_alphaBiot,tempNumOwnedPoints);
+      MATERIAL_EVALUATION::computeFracturePorosityComplex(&fracturePorosityComplex[0],&breaklessDilatationComplex[0],criticalDilatation,tempNumOwnedPoints);
+      MATERIAL_EVALUATION::computePhaseOneDensityInPores(&phaseOneDensityInPoresComplex[0],&porePressureYComplex[0],deltaTemperature,tempNumOwnedPoints);
+      MATERIAL_EVALUATION::computePhaseOneDensityInFracture(&phaseOneDensityInFractureComplex[0],&fracturePressureYComplex[0],deltaTemperature,tempNumOwnedPoints);
+      MATERIAL_EVALUATION::computeInternalForceLinearElasticCoupled(x,&yComplex[0],&porePressureYComplex[0],&fracturePressureYComplex[0],weightedVolume,cellVolume,&dilatationComplex[0],damage,bondDamage,scf,&forceComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_bulkModulus,m_shearModulus,m_horizon,m_alphaBiot,m_alpha,deltaTemperature);
+      MATERIAL_EVALUATION::ONE_PHASE::computeInternalFlowComplex(&yComplex[0],&porePressureYComplex[0],&porePressureVComplex[0],&fracturePressureYComplex[0],&fracturePressureVComplex[0],cellVolume,damage,&matrixPorosityComplex[0],matrixPorosityN,&fracturePorosityComplex[0],fracturePorosityN,&phaseOneDensityInPoresComplex[0],phaseOneDensityInPoresN,&phaseOneDensityInFractureComplex[0],phaseOneDensityInFractureN,&breaklessDilatationComplex[0],&phaseOnePoreFlowComplex[0],&phaseOneFracFlowComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_matrixPermeabilityXX,m_matrixPermeabilityYY,m_matrixPermeabilityZZ,m_phaseOneViscosity,m_horizon,m_horizon_fracture,dt,deltaTemperature);
       // Restore unperturbed value
       porePressureYComplex[perturbID] = std::real(porePressureYComplex[perturbID]);
       porePressureVComplex[perturbID] = std::real(porePressureVComplex[perturbID]);
@@ -802,14 +802,14 @@ void PeridigmNS::OnePhaseMultiphysicsElasticMaterial::computeComplexStepFiniteDi
       fracturePressureYComplex[perturbID] += std::complex<double>(0.0, epsilon);
       fracturePressureVComplex[perturbID] += std::complex<double>(0.0, epsilon/dt);
       // Evaluate the constitutive model
-      MATERIAL_EVALUATION::computeBreaklessDilatation(x,&yComplex[0],weightedVolume,cellVolume,&breaklessDilatationComplex[0],neighborhoodList,numOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
-      MATERIAL_EVALUATION::computeDilatation(x,&yComplex[0],weightedVolume,cellVolume,bondDamage,&dilatationComplex[0],neighborhoodList,numOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
-      MATERIAL_EVALUATION::computeMatrixPorosity(&matrixPorosityComplex[0],matrixPorosityN,&porePressureYComplex[0],porePressureYN,&dilatationComplex[0],dilatationN,m_compressibilityRock,m_alphaBiot,numOwnedPoints);
-      MATERIAL_EVALUATION::computeFracturePorosityComplex(&fracturePorosityComplex[0],&breaklessDilatationComplex[0],criticalDilatation,numOwnedPoints);
-      MATERIAL_EVALUATION::computePhaseOneDensityInPores(&phaseOneDensityInPoresComplex[0],&porePressureYComplex[0],deltaTemperature,numOwnedPoints);
-      MATERIAL_EVALUATION::computePhaseOneDensityInFracture(&phaseOneDensityInFractureComplex[0],&fracturePressureYComplex[0],deltaTemperature,numOwnedPoints);
-      MATERIAL_EVALUATION::computeInternalForceLinearElasticCoupled(x,&yComplex[0],&porePressureYComplex[0],&fracturePressureYComplex[0],weightedVolume,cellVolume,&dilatationComplex[0],damage,bondDamage,scf,&forceComplex[0],neighborhoodList,numOwnedPoints,m_bulkModulus,m_shearModulus,m_horizon,m_alphaBiot,m_alpha,deltaTemperature);
-      MATERIAL_EVALUATION::ONE_PHASE::computeInternalFlowComplex(&yComplex[0],&porePressureYComplex[0],&porePressureVComplex[0],&fracturePressureYComplex[0],&fracturePressureVComplex[0],cellVolume,damage,&matrixPorosityComplex[0],matrixPorosityN,&fracturePorosityComplex[0],fracturePorosityN,&phaseOneDensityInPoresComplex[0],phaseOneDensityInPoresN,&phaseOneDensityInFractureComplex[0],phaseOneDensityInFractureN,&breaklessDilatationComplex[0],&phaseOnePoreFlowComplex[0],&phaseOneFracFlowComplex[0],neighborhoodList,numOwnedPoints,m_matrixPermeabilityXX,m_matrixPermeabilityYY,m_matrixPermeabilityZZ,m_phaseOneViscosity,m_horizon,m_horizon_fracture,dt,deltaTemperature);
+      MATERIAL_EVALUATION::computeBreaklessDilatation(x,&yComplex[0],weightedVolume,cellVolume,&breaklessDilatationComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
+      MATERIAL_EVALUATION::computeDilatation(x,&yComplex[0],weightedVolume,cellVolume,bondDamage,&dilatationComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
+      MATERIAL_EVALUATION::computeMatrixPorosity(&matrixPorosityComplex[0],matrixPorosityN,&porePressureYComplex[0],porePressureYN,&dilatationComplex[0],dilatationN,m_compressibilityRock,m_alphaBiot,tempNumOwnedPoints);
+      MATERIAL_EVALUATION::computeFracturePorosityComplex(&fracturePorosityComplex[0],&breaklessDilatationComplex[0],criticalDilatation,tempNumOwnedPoints);
+      MATERIAL_EVALUATION::computePhaseOneDensityInPores(&phaseOneDensityInPoresComplex[0],&porePressureYComplex[0],deltaTemperature,tempNumOwnedPoints);
+      MATERIAL_EVALUATION::computePhaseOneDensityInFracture(&phaseOneDensityInFractureComplex[0],&fracturePressureYComplex[0],deltaTemperature,tempNumOwnedPoints);
+      MATERIAL_EVALUATION::computeInternalForceLinearElasticCoupled(x,&yComplex[0],&porePressureYComplex[0],&fracturePressureYComplex[0],weightedVolume,cellVolume,&dilatationComplex[0],damage,bondDamage,scf,&forceComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_bulkModulus,m_shearModulus,m_horizon,m_alphaBiot,m_alpha,deltaTemperature);
+      MATERIAL_EVALUATION::ONE_PHASE::computeInternalFlowComplex(&yComplex[0],&porePressureYComplex[0],&porePressureVComplex[0],&fracturePressureYComplex[0],&fracturePressureVComplex[0],cellVolume,damage,&matrixPorosityComplex[0],matrixPorosityN,&fracturePorosityComplex[0],fracturePorosityN,&phaseOneDensityInPoresComplex[0],phaseOneDensityInPoresN,&phaseOneDensityInFractureComplex[0],phaseOneDensityInFractureN,&breaklessDilatationComplex[0],&phaseOnePoreFlowComplex[0],&phaseOneFracFlowComplex[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_matrixPermeabilityXX,m_matrixPermeabilityYY,m_matrixPermeabilityZZ,m_phaseOneViscosity,m_horizon,m_horizon_fracture,dt,deltaTemperature);
       // Restore unperturbed value
       fracturePressureYComplex[perturbID] = std::real(fracturePressureYComplex[perturbID]);
       fracturePressureVComplex[perturbID] = std::real(fracturePressureVComplex[perturbID]);

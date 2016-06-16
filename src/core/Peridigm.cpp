@@ -388,16 +388,16 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
 
     const std::string statTag = "Contact Initialized";
     memstat->addStat(statTag);
-    
+
     ContactModelFactory contactModelFactory;
-    
+
     contactBlocks = contactManager->getContactBlocks();
-    
+
     double currentValue = 0.0;
-    double previousValue = 0.0;    
+    double previousValue = 0.0;
     double timeCurrent = 0.0;
     double timePrevious =0.0;
-    
+
     for(contactBlockIt = contactBlocks->begin() ; contactBlockIt != contactBlocks->end() ; contactBlockIt++){
     	contactModel = contactBlockIt->getContactModel();
         if(contactModel->Name() == "Time-Dependent Short-Range Force"){
@@ -1575,7 +1575,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
         for(contactBlockIt = contactBlocks->begin() ; contactBlockIt != contactBlocks->end() ; contactBlockIt++) {
     	 New_contactModel->evaluateParserFriction(currentValue, previousValue, timeCurrent, timePrevious);
         }
-      } 
+      }
       contactManager->importData(volume, y, v);
     }
     PeridigmNS::Timer::self().stopTimer("Gather/Scatter");
@@ -2650,7 +2650,9 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
     // swap state N and state NP1
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++)
         blockIt->updateState();
+
   }
+
   // if(peridigmComm->MyPID() == 0)
   //   cout << endl;
 }
