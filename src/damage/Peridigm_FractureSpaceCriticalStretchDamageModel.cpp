@@ -223,7 +223,7 @@ PeridigmNS::FractureSpaceCriticalStretchDamageModel::computeDamage(const double 
 
   // Update the bond damage
   // Break bonds if the extension is greater than the critical extension
-
+  unsigned new_bonds_broken = 0;
   for(iID=0 ; iID<numOwnedPoints ; ++iID){
   nodeId = ownedIDs[iID];
   nodeInitialX[0] = x[nodeId*3];
@@ -249,10 +249,13 @@ PeridigmNS::FractureSpaceCriticalStretchDamageModel::computeDamage(const double 
         trialDamage = 1.0;
       if(trialDamage > bondDamageNP1[bondIndex]){
         bondDamageNP1[bondIndex] = trialDamage;
+        new_bonds_broken++;
       }
       bondIndex += 1;
     }
   }
+
+  if (numOwnedPoints>1) std::cout << "Num new bonds broken: " << new_bonds_broken << std::endl;
 
   //  Update the element damage (percent of bonds broken)
   neighborhoodListIndex = 0;
