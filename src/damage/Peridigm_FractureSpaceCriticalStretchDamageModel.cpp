@@ -255,8 +255,6 @@ PeridigmNS::FractureSpaceCriticalStretchDamageModel::computeDamage(const double 
     }
   }
 
-  if (numOwnedPoints>1) std::cout << "Num new bonds broken: " << new_bonds_broken << std::endl;
-
   //  Update the element damage (percent of bonds broken)
   neighborhoodListIndex = 0;
   bondIndex = 0;

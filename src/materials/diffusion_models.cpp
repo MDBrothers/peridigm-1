@@ -242,10 +242,9 @@ namespace MATERIAL_EVALUATION {
           Y_dy = *(YP+1) - *(Y+1);
           Y_dz = *(YP+2) - *(Y+2);
           dY = sqrt(Y_dx*Y_dx+Y_dy*Y_dy+Y_dz*Y_dz);
-          //NOTE I want to use DFad<double>, which is why I circumvent the standard influence function code.
-          omegaPores = 1.0 - abs(dY/m_horizon);
+          omegaPores = abs(1.0 - abs(dY/m_horizon));
           //Frac diffusion is a more local process than pore diffusion.
-          omegaFrac = 1.0 - abs(dY/m_horizon_fracture);
+          omegaFrac = abs(1.0 - abs(dY/m_horizon_fracture));
 
           // Pressure potential
           dPorePressure = *porePressureYP - *porePressureY;
